@@ -7,8 +7,8 @@
 
 ## 採用する技術
 - 開発言語: TypeScript
-- 実行環境: Node.js 24 系の Long Term Support
-- パッケージ管理: npm workspaces
+- 実行環境: Node.js `v24.14.0` の Active Long Term Support
+- パッケージ管理: npm `v11.9.0` + npm workspaces
 - Frontend: React 19 系 + Vite
 - Backend: Fastify 5 系
 - Database: SQLite
@@ -41,6 +41,7 @@ packages/
 
 ## この構成を採用する理由
 - TypeScript に統一すると、AI に渡す前提知識が減る。生成速度、修正速度、レビュー速度のバランスがよい。
+- 新規開発なので、Node.js は Maintenance Long Term Support ではなく Active Long Term Support を採用する。新しい基盤を、最初から古い維持フェーズの版に合わせない。
 - Frontend と Backend を分けると、保存失敗、入力不正、HTTP 500、再試行、確認ダイアログといった失敗の境界が見えやすい。今回の学習目的に合う。
 - Fastify は schema ベースで request の validation と response の serialization を扱える。失敗検知の出発点を作りやすい。
 - Fastify は logger を素直に有効化できる。API の異常系を「画面では見えないが記録には残る」状態にしやすい。
@@ -82,3 +83,4 @@ packages/
 - AI の速度を活かすため、初期構成は小さく保つ。
 - ただし、軽さを優先するあまり観測不能な失敗を増やさない。
 - テストを通すこと自体を目的にせず、失敗したときに原因へ辿れることを重視する。
+- 手元で一時的に別の版を使って動作確認したとしても、それを標準環境へ格上げしない。採用する版は文書に明記して管理する。
