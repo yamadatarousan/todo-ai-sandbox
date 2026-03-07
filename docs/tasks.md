@@ -14,27 +14,23 @@
 
 ## 次
 
-### T-002 Backend の最小起動と request logging を入れる
-- 目的: Fastify の最小 API 起動と request 単位のログ出力を整え、失敗時の追跡起点をファイルにも残る形で作る。
-- 範囲: logger 設定、起動設定、request ごとの基本ログ、`logs/backend/app.log` へのローカルファイル永続化、想定外エラー時の出力方針
-- 範囲外: Todo API の実装、Database 永続化、外部監視サービス
-- 失敗検知: API が 500 を返した時に、request 単位で追えるログが `stdout / stderr` とローカルファイルの両方に残る状態にする。
-- 被害限定: logging の責務を Backend に閉じ、Frontend や Database の未実装へ影響を広げない。
+### T-003 SQLite と Drizzle ORM で Todo テーブルを作る
+- 目的: Todo の永続化基盤を作り、以後の API 実装で壊れ方を Database 側でも狭められるようにする。
+- 範囲: SQLite 接続、Drizzle ORM 導入、Todo テーブル定義、migration の土台、基本制約
+- 範囲外: Todo API の実装、Frontend 表示、外部 Database
+- 失敗検知: 接続失敗、migration 不整合、制約違反が早い段階で分かる状態にする。
+- 被害限定: 空文字や長すぎる title を Database 制約でも止め、Backend の不具合だけで壊れないようにする。
 - 完了条件:
-  - Backend 起動時に logger が有効になっている
-  - request ごとに基本情報がログへ残る
-  - ログがローカルファイルへ永続化される
-  - 想定外エラー時に stack trace をローカルファイルで確認できる
-  - ログファイルの保存先が `logs/backend/app.log` に決まっている
-  - 最小の logging テストまたは確認手順が残っている
+  - SQLite 接続が作成されている
+  - Drizzle ORM の schema に Todo テーブルが定義されている
+  - Todo テーブルの基本制約が入っている
+  - migration の実行方法または確認方法が残っている
 - 想定テスト:
-  - health check の応答確認
-  - request 実行後にログファイルへ記録されることの確認
-  - 想定外エラー時にログファイルへ stack trace が残ることの確認
+  - schema 定義の確認
+  - SQLite を使った最小の repository または migration 確認
 - 証拠: 未着手
 
 ## 候補
-- T-003 SQLite と Drizzle ORM で Todo テーブルを作る
 - T-004 `POST /todos` を schema 付きで実装する
 - T-005 `GET /todos` を schema 付きで実装する
 - T-006 Frontend で Todo 一覧を表示する
@@ -99,3 +95,31 @@
   - 標準環境で `npm test` 実行済み
   - 標準環境で `npm run build --workspace @todo-ai-sandbox/frontend` 実行済み
   - 標準環境で `npm run build --workspace @todo-ai-sandbox/backend` 実行済み
+
+### T-002 Backend の最小起動と request logging を入れる
+- 目的: Fastify の最小 API 起動と request 単位のログ出力を整え、失敗時の追跡起点をファイルにも残る形で作る。
+- 範囲: logger 設定、起動設定、request ごとの基本ログ、`logs/backend/app.log` へのローカルファイル永続化、想定外エラー時の出力方針
+- 範囲外: Todo API の実装、Database 永続化、外部監視サービス
+- 失敗検知: API が 500 を返した時に、request 単位で追えるログが `stdout / stderr` とローカルファイルの両方に残る状態にする。
+- 被害限定: logging の責務を Backend に閉じ、Frontend や Database の未実装へ影響を広げない。
+- 完了条件:
+  - Backend 起動時に logger が有効になっている
+  - request ごとに基本情報がログへ残る
+  - ログがローカルファイルへ永続化される
+  - 想定外エラー時に stack trace をローカルファイルで確認できる
+  - ログファイルの保存先が `logs/backend/app.log` に決まっている
+  - 最小の logging テストまたは確認手順が残っている
+- 想定テスト:
+  - health check の応答確認
+  - request 実行後にログファイルへ記録されることの確認
+  - 想定外エラー時にログファイルへ stack trace が残ることの確認
+- 証拠:
+  - `apps/backend/src/app/createApp.test.ts` に request ログ永続化テストを追加済み
+  - `apps/backend/src/app/createApp.test.ts` に想定外エラーの stack trace 記録テストを追加済み
+  - `apps/backend/src/app/createLogger.ts` で `stdout`、`stderr`、`logs/backend/app.log` への multistream を実装済み
+  - `apps/backend/src/server.ts` に起動時ログを追加済み
+  - `README.md` に `logs/backend/app.log` の場所と確認コマンドを追加済み
+  - 標準環境で `npm install` 実行済み
+  - 標準環境で `npm test` 実行済み
+  - 標準環境で `npm run build --workspace @todo-ai-sandbox/backend` 実行済み
+  - 注記: `node --import tsx apps/backend/src/server.ts` による手動の `listen` 確認は sandbox の `EPERM` で未実施

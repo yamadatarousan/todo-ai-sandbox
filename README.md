@@ -9,3 +9,7 @@ Todo アプリを題材に、AI を使った実装での失敗検知と被害限
 - Frontend のテスト: `npm run test:frontend`
 - Backend のテスト: `npm run test:backend`
 - workspace 全体のテスト: `npm test`
+
+## Backend のログ
+- ログファイル: `logs/backend/app.log`
+- ログ確認: `tail -f logs/backend/app.log`
