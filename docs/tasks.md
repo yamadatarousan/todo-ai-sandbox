@@ -15,19 +15,22 @@
 ## 次
 
 ### T-002 Backend の最小起動と request logging を入れる
-- 目的: Fastify の最小 API 起動と request 単位のログ出力を整え、失敗時の追跡起点を作る。
-- 範囲: logger 設定、起動設定、request ごとの基本ログ、想定外エラー時の出力方針
+- 目的: Fastify の最小 API 起動と request 単位のログ出力を整え、失敗時の追跡起点をファイルにも残る形で作る。
+- 範囲: logger 設定、起動設定、request ごとの基本ログ、`logs/backend/app.log` へのローカルファイル永続化、想定外エラー時の出力方針
 - 範囲外: Todo API の実装、Database 永続化、外部監視サービス
-- 失敗検知: API が 500 を返した時に、request 単位で追えるログが残る状態にする。
+- 失敗検知: API が 500 を返した時に、request 単位で追えるログが `stdout / stderr` とローカルファイルの両方に残る状態にする。
 - 被害限定: logging の責務を Backend に閉じ、Frontend や Database の未実装へ影響を広げない。
 - 完了条件:
   - Backend 起動時に logger が有効になっている
   - request ごとに基本情報がログへ残る
-  - 想定外エラー時に stack trace を確認できる
+  - ログがローカルファイルへ永続化される
+  - 想定外エラー時に stack trace をローカルファイルで確認できる
+  - ログファイルの保存先が `logs/backend/app.log` に決まっている
   - 最小の logging テストまたは確認手順が残っている
 - 想定テスト:
   - health check の応答確認
-  - 想定外エラー時のログ確認
+  - request 実行後にログファイルへ記録されることの確認
+  - 想定外エラー時にログファイルへ stack trace が残ることの確認
 - 証拠: 未着手
 
 ## 候補
