@@ -1,0 +1,19 @@
+{
+  "name": "todo-ai-sandbox",
+  "private": true,
+  "version": "0.0.0",
+  "workspaces": [
+    "apps/frontend",
+    "apps/backend"
+  ],
+  "scripts": {
+    "dev:frontend": "npm run dev --workspace @todo-ai-sandbox/frontend",
+    "dev:backend": "npm run dev --workspace @todo-ai-sandbox/backend",
+    "test": "npm run test --workspaces",
+    "test:frontend": "npm run test --workspace @todo-ai-sandbox/frontend",
+    "test:backend": "npm run test --workspace @todo-ai-sandbox/backend"
+  },
+  "engines": {
+    "node": ">=20.19.0"
+  }
+}
