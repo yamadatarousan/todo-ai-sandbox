@@ -2,6 +2,7 @@
   "name": "todo-ai-sandbox",
   "private": true,
   "version": "0.0.0",
+  "packageManager": "npm@11.9.0",
   "workspaces": [
     "apps/frontend",
     "apps/backend"
@@ -14,6 +15,7 @@
     "test:backend": "npm run test --workspace @todo-ai-sandbox/backend"
   },
   "engines": {
-    "node": ">=20.19.0"
+    "node": "24.14.0",
+    "npm": "11.9.0"
   }
 }

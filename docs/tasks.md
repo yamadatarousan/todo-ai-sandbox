@@ -14,26 +14,23 @@
 
 ## 次
 
-### T-011 開発環境を `Node.js v24.14.0` と `npm 11.9.0` に揃える
-- 目的: 採用標準の実行環境に揃え、以後のテスト結果と不具合再現条件をぶらさないようにする。
-- 範囲: Node.js と npm の版合わせ、リポジトリ内の版指定、標準環境での install と test の再確認
-- 範囲外: Todo 機能の実装、Backend logging、Database 永続化
-- 失敗検知: 採用標準の環境で install、test、build が失敗する場合に、その時点で差分を検知できるようにする。
-- 被害限定: 実行環境のズレによる不具合を、機能実装へ持ち込む前に閉じ込める。
+### T-002 Backend の最小起動と request logging を入れる
+- 目的: Fastify の最小 API 起動と request 単位のログ出力を整え、失敗時の追跡起点を作る。
+- 範囲: logger 設定、起動設定、request ごとの基本ログ、想定外エラー時の出力方針
+- 範囲外: Todo API の実装、Database 永続化、外部監視サービス
+- 失敗検知: API が 500 を返した時に、request 単位で追えるログが残る状態にする。
+- 被害限定: logging の責務を Backend に閉じ、Frontend や Database の未実装へ影響を広げない。
 - 完了条件:
-  - 手元の実行環境が `Node.js v24.14.0`、`npm 11.9.0` に揃っている
-  - リポジトリ内に標準環境を示す設定が残っている
-  - 標準環境で `npm install`、`npm test`、必要な build が通る
-  - `docs/tasks.md` の証拠が標準環境ベースに更新されている
+  - Backend 起動時に logger が有効になっている
+  - request ごとに基本情報がログへ残る
+  - 想定外エラー時に stack trace を確認できる
+  - 最小の logging テストまたは確認手順が残っている
 - 想定テスト:
-  - `npm install`
-  - `npm test`
-  - `npm run build --workspace @todo-ai-sandbox/frontend`
-  - `npm run build --workspace @todo-ai-sandbox/backend`
+  - health check の応答確認
+  - 想定外エラー時のログ確認
 - 証拠: 未着手
 
 ## 候補
-- T-002 Backend の最小起動と request logging を入れる
 - T-003 SQLite と Drizzle ORM で Todo テーブルを作る
 - T-004 `POST /todos` を schema 付きで実装する
 - T-005 `GET /todos` を schema 付きで実装する
@@ -70,3 +67,32 @@
   - `npm run build --workspace @todo-ai-sandbox/backend` 実行済み
   - 確認環境: `Node.js v20.19.0`, `npm 11.3.0`
   - 注記: この確認環境は採用標準ではない。採用標準は `Node.js v24.14.0`, `npm 11.9.0`
+
+### T-011 開発環境を `Node.js v24.14.0` と `npm 11.9.0` に揃える
+- 目的: 採用標準の実行環境に揃え、以後のテスト結果と不具合再現条件をぶらさないようにする。
+- 範囲: Node.js と npm の版合わせ、リポジトリ内の版指定、標準環境での install と test の再確認
+- 範囲外: Todo 機能の実装、Backend logging、Database 永続化
+- 失敗検知: 採用標準の環境で install、test、build が失敗する場合に、その時点で差分を検知できるようにする。
+- 被害限定: 実行環境のズレによる不具合を、機能実装へ持ち込む前に閉じ込める。
+- 完了条件:
+  - 手元の実行環境が `Node.js v24.14.0`、`npm 11.9.0` に揃っている
+  - リポジトリ内に標準環境を示す設定が残っている
+  - 標準環境で `npm install`、`npm test`、必要な build が通る
+  - `docs/tasks.md` の証拠が標準環境ベースに更新されている
+- 想定テスト:
+  - `npm install`
+  - `npm test`
+  - `npm run build --workspace @todo-ai-sandbox/frontend`
+  - `npm run build --workspace @todo-ai-sandbox/backend`
+- 証拠:
+  - `nvm install 24.14.0` 実行済み
+  - `nvm alias default 24.14.0` 実行済み
+  - `zsh -lic 'node -v'` で `v24.14.0` を確認済み
+  - `zsh -lic 'npm -v'` で `11.9.0` を確認済み
+  - `.nvmrc` を追加済み
+  - `package.json` に `packageManager: npm@11.9.0` を追加済み
+  - `package.json` の `engines` を `Node.js 24.14.0` / `npm 11.9.0` に更新済み
+  - 標準環境で `npm install` 実行済み
+  - 標準環境で `npm test` 実行済み
+  - 標準環境で `npm run build --workspace @todo-ai-sandbox/frontend` 実行済み
+  - 標準環境で `npm run build --workspace @todo-ai-sandbox/backend` 実行済み
