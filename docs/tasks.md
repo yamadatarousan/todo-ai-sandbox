@@ -8,12 +8,13 @@
 ## 標準実行環境
 - 採用標準は `Node.js v24.14.0`、`npm 11.9.0` とする。
 - `T-001` の証拠にある `Node.js v20.19.0`、`npm 11.3.0` は、基盤作成時に実際に動作確認した環境であり、採用標準ではない。
+- 標準実行環境と異なるまま `install` / `dev` / `build` / `test` / `db:migrate` を進めない。版ずれは script の guard で早期に止める。
 
 ## 進行中
 - なし
 
 ## 次
-- T-010 Playwright で重要な流れを End-to-End で確認する
+- なし
 
 ## 候補
 - なし
@@ -22,6 +23,36 @@
 - なし
 
 ## 完了
+
+### T-010 Playwright で重要な流れを End-to-End で確認する
+- 目的: Frontend と Backend を実際に起動した状態で、重要な操作が画面から Database まで通ることを確認できるようにする。
+- 範囲: Playwright 設定、E2E 用起動 script、E2E 用 Database 初期化、重要な流れの E2E シナリオ
+- 範囲外: 複数ブラウザ対応、visual regression test、CI 連携
+- 失敗検知: Todo 追加、完了切り替え、削除確認、入力不正、保存時 `500` を画面上で検知できる状態にする。
+- 被害限定: E2E 用 SQLite を `data/e2e/app.sqlite` に分離し、各実行前に作り直して既存開発データを巻き込まないようにする。
+- 完了条件:
+  - Playwright の設定があり、Frontend と Backend を自動起動して E2E を実行できる
+  - Todo 追加から完了切り替え、削除確認までの流れを通しで確認できる
+  - 空白だけの Todo を拒否し、原因表示を確認できる
+  - Todo 追加 API が `500` のとき成功扱いにしないことを確認できる
+  - E2E 実行前に専用 Database を初期化する仕組みがある
+- 想定テスト:
+  - Todo の追加から完了切り替え、削除確認までの確認
+  - 空白だけの Todo を追加したときの validation error 確認
+  - Todo 追加 API が `500` を返したときの失敗表示確認
+- 証拠:
+  - `package.json` に `@playwright/test` と `test:e2e`、E2E 用起動 script を追加済み
+  - `apps/frontend/package.json` に `dev:e2e` script を追加済み
+  - `apps/backend/package.json` に `start` script を追加済み
+  - `playwright.config.mts` に Frontend / Backend の自動起動設定を追加済み
+  - `tests/e2e/globalSetup.mts` に `data/e2e/app.sqlite` の初期化処理を追加済み
+  - `tests/e2e/todo.spec.ts` に重要な 3 本の E2E シナリオを追加済み
+  - `.gitignore` に `playwright-report/` と `test-results/` を追加済み
+  - `README.md` に `npm run test:e2e` と E2E 用 Database の説明を追加済み
+  - 標準環境で `npm install` 実行済み
+  - 標準環境で `npm test` 実行済み
+  - 標準環境で `npm run test:e2e` 実行済み
+  - 注記: sandbox では Backend の `listen` が `EPERM` になるため、E2E 実行時のみ権限昇格で確認した
 
 ### T-009 Todo 削除に確認ダイアログを入れる
 - 目的: Todo 削除を即時実行せず、確認を挟んだ上で 1 件ずつ安全に削除できるようにする。

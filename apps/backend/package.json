@@ -4,9 +4,15 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "predev": "node ../../scripts/verifyStandardRuntime.mjs",
     "dev": "tsx watch src/server.ts",
+    "prestart": "node ../../scripts/verifyStandardRuntime.mjs",
+    "start": "node --import tsx src/server.ts",
+    "prebuild": "node ../../scripts/verifyStandardRuntime.mjs",
     "build": "tsc --noEmit",
+    "predb:migrate": "node ../../scripts/verifyStandardRuntime.mjs",
     "db:migrate": "node --import tsx src/database/runMigrations.ts",
+    "pretest": "node ../../scripts/verifyStandardRuntime.mjs",
     "test": "vitest run"
   },
   "dependencies": {

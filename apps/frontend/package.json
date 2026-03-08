@@ -4,8 +4,13 @@
   "version": "0.0.0",
   "type": "module",
   "scripts": {
+    "predev": "node ../../scripts/verifyStandardRuntime.mjs",
     "dev": "vite",
+    "predev:e2e": "node ../../scripts/verifyStandardRuntime.mjs",
+    "dev:e2e": "vite --host 127.0.0.1 --port 4173",
+    "prebuild": "node ../../scripts/verifyStandardRuntime.mjs",
     "build": "tsc --noEmit && vite build",
+    "pretest": "node ../../scripts/verifyStandardRuntime.mjs",
     "test": "vitest run"
   },
   "dependencies": {

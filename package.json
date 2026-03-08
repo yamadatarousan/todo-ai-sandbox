@@ -8,14 +8,22 @@
     "apps/backend"
   ],
   "scripts": {
+    "preinstall": "node ./scripts/verifyStandardRuntime.mjs",
     "dev:frontend": "npm run dev --workspace @todo-ai-sandbox/frontend",
     "dev:backend": "npm run dev --workspace @todo-ai-sandbox/backend",
+    "dev:frontend:e2e": "npm run dev:e2e --workspace @todo-ai-sandbox/frontend",
+    "start:backend:e2e": "npm run start --workspace @todo-ai-sandbox/backend",
     "test": "npm run test --workspaces",
+    "pretest:e2e": "node ./scripts/verifyStandardRuntime.mjs",
+    "test:e2e": "playwright test",
     "test:frontend": "npm run test --workspace @todo-ai-sandbox/frontend",
     "test:backend": "npm run test --workspace @todo-ai-sandbox/backend"
   },
   "engines": {
     "node": "24.14.0",
     "npm": "11.9.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.58.2"
   }
 }

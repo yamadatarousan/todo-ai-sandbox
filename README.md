@@ -2,6 +2,12 @@
 
 Todo アプリを題材に、AI を使った実装での失敗検知と被害限定を学ぶためのリポジトリ。
 
+## 標準実行環境
+- `node -v`: `v24.14.0`
+- `npm -v`: `11.9.0`
+- ずれている場合は `exec zsh -l` または `nvm use 24.14.0` を実行し、その後で `npm install` をやり直す
+- 標準実行環境と異なるまま `install` / `dev` / `build` / `test` / `db:migrate` を実行すると、guard が先に止める
+
 ## 開発コマンド
 - 依存関係の導入: `npm install`
 - Frontend の起動: `npm run dev:frontend`
@@ -10,7 +16,9 @@ Todo アプリを題材に、AI を使った実装での失敗検知と被害限
 - Frontend のテスト: `npm run test:frontend`
 - Backend のテスト: `npm run test:backend`
 - workspace 全体のテスト: `npm test`
+- Playwright E2E: `npm run test:e2e`
 - 開発時は Frontend の `/todos` を Vite proxy で Backend `http://127.0.0.1:3001` へ流す
+- Playwright E2E は Frontend と Backend を自動起動し、`data/e2e/app.sqlite` を毎回作り直して使う
 
 ## Frontend の確認ポイント
 - Todo 一覧は起動時に `GET /todos` を呼び出して表示する
