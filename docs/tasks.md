@@ -14,24 +14,22 @@
 
 ## 次
 
-### T-004 `POST /todos` を schema 付きで実装する
-- 目的: Todo 追加 API を最小で作り、入力不正と保存失敗を静かに通さない入口を作る。
-- 範囲: route schema、use-case、repository の最小実装、成功時 response
-- 範囲外: Todo 一覧取得、完了更新、Frontend の追加フォーム
-- 失敗検知: バリデーション違反と保存失敗が response と log で追える状態にする。
-- 被害限定: 不正な入力や Database 制約違反を 1 件の追加失敗に閉じ込める。
+### T-005 `GET /todos` を schema 付きで実装する
+- 目的: Todo 一覧取得 API を作り、保存済みデータを安全に読み出せる入口を作る。
+- 範囲: route schema、use-case、repository の一覧取得、正常時 response
+- 範囲外: Todo 追加 UI、完了更新、削除
+- 失敗検知: 一覧取得失敗が `5xx` と log で追える状態にする。
+- 被害限定: 一覧取得の不具合を更新や削除へ波及させない。
 - 完了条件:
-  - `POST /todos` が schema 付きで定義されている
-  - 正常系で Todo を 1 件保存できる
-  - 不正入力時に `4xx` を返す
+  - `GET /todos` が schema 付きで定義されている
+  - 保存済み Todo を配列で返せる
   - 想定外失敗時に `5xx` と log が残る
 - 想定テスト:
-  - 正常な追加 request の確認
-  - 空文字や長すぎる title の拒否確認
-  - 保存失敗時の `5xx` 確認
+  - 空の一覧取得確認
+  - 保存済み Todo の一覧取得確認
+  - 保存層失敗時の `5xx` 確認
 
 ## 候補
-- T-005 `GET /todos` を schema 付きで実装する
 - T-006 Frontend で Todo 一覧を表示する
 - T-007 Frontend で Todo を追加し、保存失敗を表示する
 - T-008 Todo の完了切り替えを実装する
@@ -146,6 +144,35 @@
   - `apps/backend/package.json` に `db:migrate` script と SQLite / Drizzle 依存関係を追加済み
   - `README.md` に migration コマンドと既定 DB パスを追加済み
   - 標準環境で `npm install` 実行済み
+  - 標準環境で `npm run test --workspace @todo-ai-sandbox/backend` 実行済み
+  - 標準環境で `npm run build --workspace @todo-ai-sandbox/backend` 実行済み
+  - 標準環境で `TODO_AI_DATABASE_PATH=<temp>` を付けた `npm run db:migrate --workspace @todo-ai-sandbox/backend` 実行済み
+  - 標準環境で `npm test` 実行済み
+
+### T-004 `POST /todos` を schema 付きで実装する
+- 目的: Todo 追加 API を最小で作り、入力不正と保存失敗を静かに通さない入口を作る。
+- 範囲: route schema、use-case、repository の最小実装、成功時 response
+- 範囲外: Todo 一覧取得、完了更新、Frontend の追加フォーム
+- 失敗検知: バリデーション違反と保存失敗が response と log で追える状態にする。
+- 被害限定: 不正な入力や Database 制約違反を 1 件の追加失敗に閉じ込める。
+- 完了条件:
+  - `POST /todos` が schema 付きで定義されている
+  - 正常系で Todo を 1 件保存できる
+  - 不正入力時に `4xx` を返す
+  - 想定外失敗時に `5xx` と log が残る
+- 想定テスト:
+  - 正常な追加 request の確認
+  - 空文字や長すぎる title の拒否確認
+  - 保存失敗時の `5xx` 確認
+- 証拠:
+  - `apps/backend/src/routes/registerTodoRoutes.ts` に `POST /todos` route と schema を追加済み
+  - `apps/backend/src/use-cases/createTodoUseCase.ts` に title 整形と Todo 作成処理を追加済み
+  - `apps/backend/src/repositories/createSqliteTodoRepository.ts` に SQLite 保存処理を追加済み
+  - `apps/backend/src/shared/requestError.ts` に `4xx` / `5xx` response 生成と validation 変換を追加済み
+  - `apps/backend/src/app/createApp.test.ts` に `POST /todos` の 201 / 400 / 500 テストを追加済み
+  - `apps/backend/src/use-cases/createTodoUseCase.test.ts` に use-case テストを追加済み
+  - `apps/backend/src/repositories/createSqliteTodoRepository.test.ts` に repository 結合テストを追加済み
+  - `README.md` に `POST /todos` の呼び出し例を追加済み
   - 標準環境で `npm run test --workspace @todo-ai-sandbox/backend` 実行済み
   - 標準環境で `npm run build --workspace @todo-ai-sandbox/backend` 実行済み
   - 標準環境で `TODO_AI_DATABASE_PATH=<temp>` を付けた `npm run db:migrate --workspace @todo-ai-sandbox/backend` 実行済み
