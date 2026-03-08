@@ -10,10 +10,18 @@ import {
   TodoListLoadError,
   type TodoSummary,
 } from "./features/todos/fetchTodos";
+import {
+  TodoCompletionUpdateError,
+  updateTodoCompletion,
+} from "./features/todos/updateTodoCompletion";
 
 type AppProps = {
   loadTodos?: () => Promise<TodoSummary[]>;
   saveTodo?: (title: string) => Promise<TodoSummary>;
+  updateTodoCompletion?: (
+    id: string,
+    isCompleted: boolean,
+  ) => Promise<TodoSummary>;
 };
 
 type TodoListState =
@@ -44,9 +52,23 @@ type TodoSaveState =
       requestId?: string;
     };
 
+type TodoCompletionState =
+  | {
+      status: "idle";
+    }
+  | {
+      status: "saving";
+    }
+  | {
+      status: "error";
+      message: string;
+      requestId?: string;
+    };
+
 export function App({
   loadTodos = fetchTodos,
   saveTodo = createTodo,
+  updateTodoCompletion: updateTodoCompletionRequest = updateTodoCompletion,
 }: AppProps) {
   const [todoListState, setTodoListState] = useState<TodoListState>({
     status: "loading",
@@ -55,6 +77,9 @@ export function App({
   const [todoSaveState, setTodoSaveState] = useState<TodoSaveState>({
     status: "idle",
   });
+  const [todoCompletionStates, setTodoCompletionStates] = useState<
+    Record<string, TodoCompletionState>
+  >({});
 
   useEffect(() => {
     let isCancelled = false;
@@ -161,6 +186,72 @@ export function App({
       });
   }
 
+  function handleTodoCompletionToggle(todo: TodoSummary) {
+    if (todoListState.status !== "success") {
+      return;
+    }
+
+    const currentCompletionState = getTodoCompletionState(
+      todoCompletionStates,
+      todo.id,
+    );
+
+    if (currentCompletionState.status === "saving") {
+      return;
+    }
+
+    setTodoCompletionStates((currentStates) => ({
+      ...currentStates,
+      [todo.id]: {
+        status: "saving",
+      },
+    }));
+
+    void updateTodoCompletionRequest(todo.id, !todo.isCompleted)
+      .then((updatedTodo) => {
+        setTodoListState((currentState) => {
+          if (currentState.status !== "success") {
+            return currentState;
+          }
+
+          return {
+            status: "success",
+            todos: currentState.todos.map((currentTodo) =>
+              currentTodo.id === updatedTodo.id ? updatedTodo : currentTodo,
+            ),
+          };
+        });
+        setTodoCompletionStates((currentStates) => ({
+          ...currentStates,
+          [todo.id]: {
+            status: "idle",
+          },
+        }));
+      })
+      .catch((error: unknown) => {
+        if (error instanceof TodoCompletionUpdateError) {
+          setTodoCompletionStates((currentStates) => ({
+            ...currentStates,
+            [todo.id]: {
+              message: error.message,
+              requestId: error.requestId,
+              status: "error",
+            },
+          }));
+
+          return;
+        }
+
+        setTodoCompletionStates((currentStates) => ({
+          ...currentStates,
+          [todo.id]: {
+            message: "Todo の更新に失敗しました。",
+            status: "error",
+          },
+        }));
+      });
+  }
+
   const isTodoSubmitDisabled =
     todoListState.status !== "success" || todoSaveState.status === "saving";
 
@@ -252,8 +343,18 @@ export function App({
               <p>{todoListState.todos.length} 件の Todo を表示しています。</p>
             </header>
             <ol className="todo-list">
-              {todoListState.todos.map((todo) => (
-                <li className="todo-card" key={todo.id}>
+              {todoListState.todos.map((todo) => {
+                const todoCompletionState = getTodoCompletionState(
+                  todoCompletionStates,
+                  todo.id,
+                );
+
+                return (
+                <li
+                  className="todo-card"
+                  data-completed={todo.isCompleted ? "true" : "false"}
+                  key={todo.id}
+                >
                   <div className="todo-card-topline">
                     <p className="todo-status">
                       {todo.isCompleted ? "完了" : "未完了"}
@@ -263,8 +364,34 @@ export function App({
                     </p>
                   </div>
                   <h2>{todo.title}</h2>
+                  <div className="todo-card-actions">
+                    <button
+                      className="todo-toggle-button"
+                      disabled={todoCompletionState.status === "saving"}
+                      onClick={() => handleTodoCompletionToggle(todo)}
+                      type="button"
+                    >
+                      {todoCompletionState.status === "saving"
+                        ? "更新中..."
+                        : todo.isCompleted
+                          ? "未完了に戻す"
+                          : "完了にする"}
+                    </button>
+                  </div>
+                  {todoCompletionState.status === "error" ? (
+                    <div className="todo-inline-error" role="alert">
+                      <p>{todoCompletionState.message}</p>
+                      {todoCompletionState.requestId ? (
+                        <p className="request-id">
+                          requestId: {todoCompletionState.requestId}
+                        </p>
+                      ) : null}
+                      <p>更新に失敗したため、この Todo の表示は切り替えていません。</p>
+                    </div>
+                  ) : null}
                 </li>
-              ))}
+                );
+              })}
             </ol>
           </section>
         ) : null}
@@ -280,4 +407,13 @@ function formatTodoDate(value: string) {
     minute: "2-digit",
     month: "short",
   }).format(new Date(value));
+}
+
+function getTodoCompletionState(
+  todoCompletionStates: Record<string, TodoCompletionState>,
+  todoId: string,
+): TodoCompletionState {
+  return todoCompletionStates[todoId] ?? {
+    status: "idle",
+  };
 }

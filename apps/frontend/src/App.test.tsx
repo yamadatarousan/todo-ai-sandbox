@@ -2,6 +2,7 @@ import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { App } from "./App";
 import { createTodoSaveError } from "./features/todos/createTodo";
 import { TodoListLoadError, type TodoSummary } from "./features/todos/fetchTodos";
+import { createTodoCompletionUpdateError } from "./features/todos/updateTodoCompletion";
 
 function createDeferredPromise<T>() {
   let reject: (reason?: unknown) => void = () => {};
@@ -233,5 +234,134 @@ describe("App", () => {
         screen.queryByRole("heading", { name: "保存に失敗する Todo" }),
       ).not.toBeInTheDocument();
     });
+  });
+
+  it("Todo の完了切り替え中は更新中表示を出し、成功後に対象行だけ更新する", async () => {
+    const deferred = createDeferredPromise<TodoSummary>();
+    const updateTodoCompletion = vi.fn().mockImplementation(() => deferred.promise);
+
+    render(
+      <App
+        loadTodos={async () => [
+          {
+            createdAt: "2026-03-08T00:00:00.000Z",
+            id: "todo-1",
+            isCompleted: false,
+            title: "切り替える Todo",
+            updatedAt: "2026-03-08T00:00:00.000Z",
+          },
+          {
+            createdAt: "2026-03-07T00:00:00.000Z",
+            id: "todo-2",
+            isCompleted: false,
+            title: "そのままの Todo",
+            updatedAt: "2026-03-07T00:00:00.000Z",
+          },
+        ]}
+        updateTodoCompletion={updateTodoCompletion}
+      />,
+    );
+
+    await screen.findByRole("heading", { name: "切り替える Todo" });
+
+    fireEvent.click(screen.getAllByRole("button", { name: "完了にする" })[0]);
+
+    expect(updateTodoCompletion).toHaveBeenCalledWith("todo-1", true);
+    expect(
+      screen.getByRole("button", { name: "更新中..." }),
+    ).toBeDisabled();
+
+    deferred.resolve({
+      createdAt: "2026-03-08T00:00:00.000Z",
+      id: "todo-1",
+      isCompleted: true,
+      title: "切り替える Todo",
+      updatedAt: "2026-03-10T00:00:00.000Z",
+    });
+
+    expect(await screen.findByText("完了")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "未完了に戻す" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "そのままの Todo" }),
+    ).toBeInTheDocument();
+  });
+
+  it("完了切り替えが 404 で失敗したときは対象行に失敗表示を出し、状態は変えない", async () => {
+    render(
+      <App
+        loadTodos={async () => [
+          {
+            createdAt: "2026-03-08T00:00:00.000Z",
+            id: "todo-1",
+            isCompleted: false,
+            title: "見つからない Todo",
+            updatedAt: "2026-03-08T00:00:00.000Z",
+          },
+        ]}
+        updateTodoCompletion={async () => {
+          throw createTodoCompletionUpdateError("Todo が見つかりません。", {
+            requestId: "req-complete-404",
+          });
+        }}
+      />,
+    );
+
+    await screen.findByRole("heading", { name: "見つからない Todo" });
+
+    fireEvent.click(screen.getByRole("button", { name: "完了にする" }));
+
+    expect(await screen.findByText("Todo が見つかりません。")).toBeInTheDocument();
+    expect(screen.getByText("requestId: req-complete-404")).toBeInTheDocument();
+    expect(
+      screen.getByText("更新に失敗したため、この Todo の表示は切り替えていません。"),
+    ).toBeInTheDocument();
+    expect(screen.getByText("未完了")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "完了にする" }),
+    ).toBeInTheDocument();
+  });
+
+  it("完了切り替えが 5xx で失敗したときも対象行だけに失敗表示を出す", async () => {
+    render(
+      <App
+        loadTodos={async () => [
+          {
+            createdAt: "2026-03-08T00:00:00.000Z",
+            id: "todo-1",
+            isCompleted: true,
+            title: "更新失敗する Todo",
+            updatedAt: "2026-03-08T00:00:00.000Z",
+          },
+          {
+            createdAt: "2026-03-07T00:00:00.000Z",
+            id: "todo-2",
+            isCompleted: false,
+            title: "別の Todo",
+            updatedAt: "2026-03-07T00:00:00.000Z",
+          },
+        ]}
+        updateTodoCompletion={async () => {
+          throw createTodoCompletionUpdateError("サーバーエラーが発生しました。", {
+            requestId: "req-complete-500",
+          });
+        }}
+      />,
+    );
+
+    await screen.findByRole("heading", { name: "更新失敗する Todo" });
+
+    fireEvent.click(screen.getByRole("button", { name: "未完了に戻す" }));
+
+    expect(
+      await screen.findByText("サーバーエラーが発生しました。"),
+    ).toBeInTheDocument();
+    expect(screen.getByText("requestId: req-complete-500")).toBeInTheDocument();
+    expect(screen.getByText("完了")).toBeInTheDocument();
+    expect(
+      screen.getByRole("button", { name: "未完了に戻す" }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "別の Todo" })).toBeInTheDocument();
   });
 });

@@ -13,16 +13,50 @@
 - なし
 
 ## 次
-- T-008 Todo の完了切り替えを実装する
+- T-009 Todo 削除に確認ダイアログを入れる
 
 ## 候補
-- T-009 Todo 削除に確認ダイアログを入れる
 - T-010 Playwright で重要な流れを End-to-End で確認する
 
 ## 保留
 - なし
 
 ## 完了
+
+### T-008 Todo の完了切り替えを実装する
+- 目的: Todo の完了状態を切り替えられるようにし、更新成功と更新失敗を 1 件単位で区別できるようにする。
+- 範囲: `PATCH /todos/:id`、完了更新 use-case、repository 更新、Frontend の完了切り替え UI、更新中表示、更新失敗表示
+- 範囲外: 削除、複数件一括更新
+- 失敗検知: 完了更新の `404` / `500` を画面上で確認でき、Backend log でも追える状態にする。
+- 被害限定: 1 件の更新失敗をその Todo 行に閉じ込め、一覧全体や追加フォームを壊さない。
+- 完了条件:
+  - Backend に `PATCH /todos/:id` が schema 付きで定義されている
+  - Frontend から完了切り替えを実行できる
+  - 更新中表示がある
+  - `404` と `500` の失敗表示がある
+  - 更新成功後に該当 Todo の表示だけが更新される
+- 想定テスト:
+  - 正常な完了切り替え確認
+  - 存在しない Todo の `404` 確認
+  - 更新失敗時の `500` 確認
+- 証拠:
+  - `apps/backend/src/routes/registerTodoRoutes.ts` に `PATCH /todos/:id` route と schema を追加済み
+  - `apps/backend/src/use-cases/updateTodoCompletionUseCase.ts` に完了更新 use-case を追加済み
+  - `apps/backend/src/repositories/createSqliteTodoRepository.ts` に完了更新処理を追加済み
+  - `apps/backend/src/shared/requestError.ts` に `404` response 生成と `ResourceNotFoundError` を追加済み
+  - `apps/backend/src/app/createApp.test.ts` に `PATCH /todos/:id` の 200 / 404 / 500 テストを追加済み
+  - `apps/backend/src/use-cases/updateTodoCompletionUseCase.test.ts` に use-case テストを追加済み
+  - `apps/backend/src/repositories/createSqliteTodoRepository.test.ts` に完了更新の repository 結合テストを追加済み
+  - `apps/frontend/src/features/todos/updateTodoCompletion.ts` に `PATCH /todos/:id` client と失敗変換を追加済み
+  - `apps/frontend/src/App.tsx` に Todo 行ごとの完了切り替え UI、更新中表示、更新失敗表示を追加済み
+  - `apps/frontend/src/features/todos/updateTodoCompletion.test.ts` に client テストを追加済み
+  - `apps/frontend/src/App.test.tsx` に完了切り替えの成功 / `404` / `500` 表示テストを追加済み
+  - `README.md` に `PATCH /todos/:id` の利用例と Frontend の確認ポイントを追加済み
+  - 標準環境で `npm run test --workspace @todo-ai-sandbox/backend` 実行済み
+  - 標準環境で `npm run test --workspace @todo-ai-sandbox/frontend` 実行済み
+  - 標準環境で `npm run build --workspace @todo-ai-sandbox/frontend` 実行済み
+  - 標準環境で `npm run build --workspace @todo-ai-sandbox/backend` 実行済み
+  - 標準環境で `npm test` 実行済み
 
 ### T-001 開発基盤を作る
 - 目的: `apps/frontend` と `apps/backend` を持つ最小構成を作り、開発の土台を整える。

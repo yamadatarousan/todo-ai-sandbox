@@ -1,4 +1,4 @@
-import { desc } from "drizzle-orm";
+import { desc, eq } from "drizzle-orm";
 import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
 import * as databaseSchema from "../database/schema";
 import { todos } from "../database/schema";
@@ -24,6 +24,36 @@ export function createSqliteTodoRepository(
         .from(todos)
         .orderBy(desc(todos.createdAt), desc(todos.id))
         .all();
+    },
+    async updateCompletion(input) {
+      const currentTodo = options.database
+        .select()
+        .from(todos)
+        .where(eq(todos.id, input.id))
+        .get();
+
+      if (!currentTodo) {
+        return undefined;
+      }
+
+      if (currentTodo.isCompleted === input.isCompleted) {
+        return currentTodo;
+      }
+
+      options.database
+        .update(todos)
+        .set({
+          isCompleted: input.isCompleted,
+          updatedAt: input.updatedAt,
+        })
+        .where(eq(todos.id, input.id))
+        .run();
+
+      return options.database
+        .select()
+        .from(todos)
+        .where(eq(todos.id, input.id))
+        .get();
     },
   };
 }

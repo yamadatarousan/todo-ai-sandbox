@@ -3,14 +3,17 @@ import { todoTitleMaxLength } from "../database/schema";
 import {
   badRequestErrorResponseSchema,
   internalServerErrorResponseSchema,
+  notFoundErrorResponseSchema,
   type ErrorResponse,
 } from "../shared/requestError";
 import type { CreateTodoUseCase } from "../use-cases/createTodoUseCase";
 import type { GetTodosUseCase } from "../use-cases/getTodosUseCase";
+import type { UpdateTodoCompletionUseCase } from "../use-cases/updateTodoCompletionUseCase";
 
 type RegisterTodoRoutesOptions = {
   createTodoUseCase: CreateTodoUseCase;
   getTodosUseCase: GetTodosUseCase;
+  updateTodoCompletionUseCase: UpdateTodoCompletionUseCase;
 };
 
 type CreateTodoRequestBody = {
@@ -27,11 +30,19 @@ type CreateTodoSuccessResponse = {
   };
 };
 
-type CreateTodoRouteReply = CreateTodoSuccessResponse | ErrorResponse;
+type TodoSuccessResponse = CreateTodoSuccessResponse;
+type CreateTodoRouteReply = TodoSuccessResponse | ErrorResponse;
 type GetTodosSuccessResponse = {
-  todos: CreateTodoSuccessResponse["todo"][];
+  todos: TodoSuccessResponse["todo"][];
 };
 type GetTodosRouteReply = GetTodosSuccessResponse | ErrorResponse;
+type UpdateTodoCompletionRequestParams = {
+  id: string;
+};
+type UpdateTodoCompletionRequestBody = {
+  isCompleted: boolean;
+};
+type UpdateTodoCompletionRouteReply = TodoSuccessResponse | ErrorResponse;
 
 const createTodoBodySchema = {
   additionalProperties: false,
@@ -46,7 +57,7 @@ const createTodoBodySchema = {
   type: "object",
 } as const;
 
-const createTodoSuccessResponseSchema = {
+const todoSuccessResponseSchema = {
   additionalProperties: false,
   properties: {
     todo: {
@@ -76,11 +87,33 @@ const getTodosSuccessResponseSchema = {
   additionalProperties: false,
   properties: {
     todos: {
-      items: createTodoSuccessResponseSchema.properties.todo,
+      items: todoSuccessResponseSchema.properties.todo,
       type: "array",
     },
   },
   required: ["todos"],
+  type: "object",
+} as const;
+
+const updateTodoCompletionParamsSchema = {
+  additionalProperties: false,
+  properties: {
+    id: {
+      minLength: 1,
+      pattern: "\\S",
+      type: "string",
+    },
+  },
+  required: ["id"],
+  type: "object",
+} as const;
+
+const updateTodoCompletionBodySchema = {
+  additionalProperties: false,
+  properties: {
+    isCompleted: { type: "boolean" },
+  },
+  required: ["isCompleted"],
   type: "object",
 } as const;
 
@@ -124,7 +157,7 @@ export function registerTodoRoutes(
       schema: {
         body: createTodoBodySchema,
         response: {
-          201: createTodoSuccessResponseSchema,
+          201: todoSuccessResponseSchema,
           400: badRequestErrorResponseSchema,
           500: internalServerErrorResponseSchema,
         },
@@ -142,6 +175,42 @@ export function registerTodoRoutes(
           updatedAt: createdTodo.updatedAt.toISOString(),
         },
       });
+    },
+  );
+
+  app.patch<{
+    Body: UpdateTodoCompletionRequestBody;
+    Params: UpdateTodoCompletionRequestParams;
+    Reply: UpdateTodoCompletionRouteReply;
+  }>(
+    "/todos/:id",
+    {
+      schema: {
+        body: updateTodoCompletionBodySchema,
+        params: updateTodoCompletionParamsSchema,
+        response: {
+          200: todoSuccessResponseSchema,
+          400: badRequestErrorResponseSchema,
+          404: notFoundErrorResponseSchema,
+          500: internalServerErrorResponseSchema,
+        },
+      },
+    },
+    async (request) => {
+      const updatedTodo = await options.updateTodoCompletionUseCase.execute({
+        id: request.params.id,
+        isCompleted: request.body.isCompleted,
+      });
+
+      return {
+        todo: {
+          createdAt: updatedTodo.createdAt.toISOString(),
+          id: updatedTodo.id,
+          isCompleted: updatedTodo.isCompleted,
+          title: updatedTodo.title,
+          updatedAt: updatedTodo.updatedAt.toISOString(),
+        },
+      };
     },
   );
 }

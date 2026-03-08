@@ -6,7 +6,7 @@ export type GetTodosUseCase = {
 };
 
 export type GetTodosUseCaseDependencies = {
-  todoRepository: TodoRepository;
+  todoRepository: Pick<TodoRepository, "list">;
 };
 
 export function getTodosUseCase(

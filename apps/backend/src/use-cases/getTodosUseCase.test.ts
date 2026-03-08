@@ -21,9 +21,6 @@ describe("getTodosUseCase", () => {
     ];
     const useCase = getTodosUseCase({
       todoRepository: {
-        async create(todo) {
-          return todo;
-        },
         async list() {
           return todos;
         },

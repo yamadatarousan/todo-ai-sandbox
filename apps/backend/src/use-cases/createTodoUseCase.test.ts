@@ -18,9 +18,6 @@ describe("createTodoUseCase", () => {
           savedTodo = todo;
           return todo;
         },
-        async list() {
-          return [];
-        },
       },
     });
 
@@ -45,9 +42,6 @@ describe("createTodoUseCase", () => {
         async create(todo) {
           createSpy(todo);
           return todo;
-        },
-        async list() {
-          return [];
         },
       },
     });

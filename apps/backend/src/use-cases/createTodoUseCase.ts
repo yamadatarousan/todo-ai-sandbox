@@ -15,7 +15,7 @@ export type CreateTodoUseCase = {
 export type CreateTodoUseCaseDependencies = {
   createId?: () => string;
   getCurrentDate?: () => Date;
-  todoRepository: TodoRepository;
+  todoRepository: Pick<TodoRepository, "create">;
 };
 
 export function createTodoUseCase(

@@ -21,6 +21,13 @@ export class ClientInputError extends Error {
   }
 }
 
+export class ResourceNotFoundError extends Error {
+  constructor(message: string) {
+    super(message);
+    this.name = "ResourceNotFoundError";
+  }
+}
+
 export const errorIssueResponseSchema = {
   additionalProperties: false,
   properties: {
@@ -56,6 +63,16 @@ export const internalServerErrorResponseSchema = {
   type: "object",
 } as const;
 
+export const notFoundErrorResponseSchema = {
+  additionalProperties: false,
+  properties: {
+    message: { type: "string" },
+    requestId: { type: "string" },
+  },
+  required: ["message", "requestId"],
+  type: "object",
+} as const;
+
 export function createBadRequestErrorResponse(
   requestId: string,
   issues: ErrorIssue[],
@@ -72,6 +89,16 @@ export function createInternalServerErrorResponse(
 ): ErrorResponse {
   return {
     message: "サーバーエラーが発生しました。",
+    requestId,
+  };
+}
+
+export function createNotFoundErrorResponse(
+  requestId: string,
+  message: string,
+): ErrorResponse {
+  return {
+    message,
     requestId,
   };
 }

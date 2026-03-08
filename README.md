@@ -16,6 +16,8 @@ Todo アプリを題材に、AI を使った実装での失敗検知と被害限
 - Todo 一覧は起動時に `GET /todos` を呼び出して表示する
 - Todo 追加フォームは `POST /todos` を呼び出し、保存成功時だけ一覧を更新する
 - 保存が `4xx` / `5xx` で失敗したときは、フォーム周辺に message / issue / `requestId` を表示する
+- Todo の完了切り替えは `PATCH /todos/:id` を呼び出し、更新成功時だけ対象行を更新する
+- 完了更新が `404` / `500` で失敗したときは、対象の Todo 行に message と `requestId` を表示する
 
 ## Backend のログ
 - ログファイル: `logs/backend/app.log`
@@ -40,5 +42,14 @@ curl -X POST http://127.0.0.1:3001/todos \
   -d '{"title":"最初の Todo"}'
 ```
 
+- Todo の完了切り替え:
+
+```bash
+curl -X PATCH http://127.0.0.1:3001/todos/<todo-id> \
+  -H 'content-type: application/json' \
+  -d '{"isCompleted":true}'
+```
+
 - `GET /todos` は新しい Todo を先に返す
+- `PATCH /todos/:id` は存在しない Todo に `404` を返す
 - 不正な入力や想定外エラーの response には `requestId` が含まれる
