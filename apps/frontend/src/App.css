@@ -1,0 +1,173 @@
+:root {
+  color: #1f1b16;
+  background:
+    radial-gradient(circle at top, rgba(224, 173, 92, 0.25), transparent 35%),
+    linear-gradient(180deg, #f5ead7 0%, #efe0c4 100%);
+  font-family:
+    "Iowan Old Style",
+    "Palatino Linotype",
+    "Book Antiqua",
+    Georgia,
+    serif;
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  min-width: 320px;
+  min-height: 100vh;
+  background:
+    linear-gradient(rgba(115, 80, 47, 0.08) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(115, 80, 47, 0.06) 1px, transparent 1px),
+    linear-gradient(180deg, #f5ead7 0%, #efe0c4 100%);
+  background-size: 100% 2.6rem, 2.6rem 100%, 100% 100%;
+}
+
+#root {
+  min-height: 100vh;
+}
+
+.app-shell {
+  display: grid;
+  gap: 1.5rem;
+  margin: 0 auto;
+  max-width: 72rem;
+  padding: 2rem 1.25rem 3rem;
+}
+
+.hero-panel,
+.board-panel,
+.todo-card,
+.status-card {
+  border: 1px solid rgba(91, 61, 30, 0.18);
+  border-radius: 1.5rem;
+  box-shadow: 0 1rem 3rem rgba(79, 52, 24, 0.08);
+}
+
+.hero-panel {
+  background: rgba(255, 249, 240, 0.88);
+  padding: 1.5rem;
+}
+
+.eyebrow,
+.status-label,
+.todo-status,
+.todo-date,
+.request-id {
+  font-family:
+    "SFMono-Regular",
+    "Menlo",
+    "Consolas",
+    "Liberation Mono",
+    monospace;
+}
+
+.eyebrow,
+.status-label {
+  color: #875c2d;
+  letter-spacing: 0.16em;
+  margin: 0 0 0.75rem;
+  text-transform: uppercase;
+}
+
+.hero-panel h1 {
+  font-size: clamp(2.2rem, 6vw, 4.2rem);
+  line-height: 0.95;
+  margin: 0;
+}
+
+.hero-copy {
+  color: #544537;
+  font-size: 1.05rem;
+  margin: 1rem 0 0;
+  max-width: 38rem;
+}
+
+.board-panel {
+  background: rgba(255, 252, 246, 0.86);
+  min-height: 18rem;
+  padding: 1rem;
+}
+
+.status-card {
+  background: rgba(255, 248, 238, 0.94);
+  padding: 1.25rem;
+}
+
+.status-card[data-state="error"] {
+  background: rgba(255, 235, 229, 0.96);
+}
+
+.request-id {
+  color: #7a3b1c;
+  font-size: 0.95rem;
+}
+
+.todo-list-panel {
+  display: grid;
+  gap: 1rem;
+}
+
+.todo-list-header {
+  align-items: baseline;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.75rem;
+}
+
+.todo-list-header p {
+  margin: 0;
+}
+
+.todo-list {
+  display: grid;
+  gap: 1rem;
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.todo-card {
+  background: linear-gradient(180deg, rgba(255, 250, 244, 0.98), #fff3df);
+  padding: 1rem 1.1rem;
+}
+
+.todo-card-topline {
+  align-items: center;
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.todo-status,
+.todo-date {
+  color: #7a5a3a;
+  font-size: 0.85rem;
+  margin: 0;
+}
+
+.todo-card h2 {
+  font-size: 1.35rem;
+  margin: 0.8rem 0 0;
+}
+
+@media (max-width: 640px) {
+  .app-shell {
+    padding: 1rem 0.9rem 2rem;
+  }
+
+  .hero-panel,
+  .board-panel,
+  .todo-card,
+  .status-card {
+    border-radius: 1.1rem;
+  }
+
+  .todo-card-topline {
+    align-items: flex-start;
+    flex-direction: column;
+  }
+}

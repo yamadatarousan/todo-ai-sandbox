@@ -15,23 +15,23 @@
 ## 次
 - なし
 
-### T-006 Frontend で Todo 一覧を表示する
-- 目的: Backend の `GET /todos` を使って、Todo 一覧の最初の表示面を作る。
-- 範囲: 一覧取得、読み込み中表示、空状態表示、失敗表示
-- 範囲外: Todo 追加フォーム、完了更新、削除
-- 失敗検知: 一覧取得失敗を画面上で確認でき、成功したように見せない状態にする。
-- 被害限定: 一覧取得失敗を表示レイヤーに閉じ込め、他の操作へ波及させない。
+### T-007 Frontend で Todo を追加し、保存失敗を表示する
+- 目的: Todo 追加フォームを作り、保存成功と保存失敗を画面上で区別できるようにする。
+- 範囲: 入力フォーム、`POST /todos` 呼び出し、保存中表示、保存失敗表示、一覧更新
+- 範囲外: 完了更新、削除
+- 失敗検知: `POST /todos` の `4xx` / `5xx` を画面上で確認できる状態にする。
+- 被害限定: 保存失敗をフォーム周辺に閉じ込め、一覧表示全体を壊さない。
 - 完了条件:
-  - Frontend が `GET /todos` を呼び出せる
-  - 読み込み中、空状態、一覧表示、失敗表示がある
-  - API が `500` を返したときに失敗表示が出る
+  - Frontend から `POST /todos` を呼び出せる
+  - 保存中表示がある
+  - `4xx` と `5xx` の失敗表示がある
+  - 保存成功後に一覧へ反映される
 - 想定テスト:
-  - 空状態の表示確認
-  - 保存済み Todo 一覧の表示確認
+  - 正常追加時の一覧更新確認
+  - 空文字入力時の失敗表示確認
   - `500` 時の失敗表示確認
 
 ## 候補
-- T-007 Frontend で Todo を追加し、保存失敗を表示する
 - T-008 Todo の完了切り替えを実装する
 - T-009 Todo 削除に確認ダイアログを入れる
 - T-010 Playwright で重要な流れを End-to-End で確認する
@@ -204,4 +204,30 @@
   - 標準環境で `npm run test --workspace @todo-ai-sandbox/backend` 実行済み
   - 標準環境で `npm run build --workspace @todo-ai-sandbox/backend` 実行済み
   - 標準環境で `TODO_AI_DATABASE_PATH=<temp>` を付けた `npm run db:migrate --workspace @todo-ai-sandbox/backend` 実行済み
+  - 標準環境で `npm test` 実行済み
+
+### T-006 Frontend で Todo 一覧を表示する
+- 目的: Backend の `GET /todos` を使って、Todo 一覧の最初の表示面を作る。
+- 範囲: 一覧取得、読み込み中表示、空状態表示、失敗表示
+- 範囲外: Todo 追加フォーム、完了更新、削除
+- 失敗検知: 一覧取得失敗を画面上で確認でき、成功したように見せない状態にする。
+- 被害限定: 一覧取得失敗を表示レイヤーに閉じ込め、他の操作へ波及させない。
+- 完了条件:
+  - Frontend が `GET /todos` を呼び出せる
+  - 読み込み中、空状態、一覧表示、失敗表示がある
+  - API が `500` を返したときに失敗表示が出る
+- 想定テスト:
+  - 空状態の表示確認
+  - 保存済み Todo 一覧の表示確認
+  - `500` 時の失敗表示確認
+- 証拠:
+  - `apps/frontend/src/features/todos/fetchTodos.ts` に `GET /todos` client と error 変換を追加済み
+  - `apps/frontend/src/App.tsx` に読み込み中、空状態、一覧表示、失敗表示を追加済み
+  - `apps/frontend/src/App.css` に一覧表示用の UI を追加済み
+  - `apps/frontend/src/App.test.tsx` に loading / empty / success / error テストを追加済み
+  - `apps/frontend/src/features/todos/fetchTodos.test.ts` に `GET /todos` client テストを追加済み
+  - `apps/frontend/vite.config.ts` に開発時の `/todos` proxy を追加済み
+  - `README.md` に Frontend の proxy 前提と `GET /todos` の利用前提を追加済み
+  - 標準環境で `npm run test --workspace @todo-ai-sandbox/frontend` 実行済み
+  - 標準環境で `npm run build --workspace @todo-ai-sandbox/frontend` 実行済み
   - 標準環境で `npm test` 実行済み

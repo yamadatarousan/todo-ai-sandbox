@@ -10,6 +10,7 @@ Todo アプリを題材に、AI を使った実装での失敗検知と被害限
 - Frontend のテスト: `npm run test:frontend`
 - Backend のテスト: `npm run test:backend`
 - workspace 全体のテスト: `npm test`
+- 開発時は Frontend の `/todos` を Vite proxy で Backend `http://127.0.0.1:3001` へ流す
 
 ## Backend のログ
 - ログファイル: `logs/backend/app.log`
