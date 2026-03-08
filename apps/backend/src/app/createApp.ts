@@ -10,11 +10,13 @@ import {
 } from "../shared/requestError";
 import { registerTodoRoutes } from "../routes/registerTodoRoutes";
 import { createTodoUseCase, type CreateTodoUseCase } from "../use-cases/createTodoUseCase";
+import { getTodosUseCase, type GetTodosUseCase } from "../use-cases/getTodosUseCase";
 import { createBackendLogger, type CreateBackendLoggerOptions } from "./createLogger";
 
 export type CreateAppOptions = CreateBackendLoggerOptions &
   CreateDatabaseConnectionOptions & {
     createTodoUseCase?: CreateTodoUseCase;
+    getTodosUseCase?: GetTodosUseCase;
   };
 
 export function createApp(options: CreateAppOptions = {}) {
@@ -25,20 +27,30 @@ export function createApp(options: CreateAppOptions = {}) {
   let databaseConnection:
     | ReturnType<typeof createDatabaseConnection>
     | undefined;
+  const resolvedTodoRepository = (() => {
+    if (options.createTodoUseCase && options.getTodosUseCase) {
+      return undefined;
+    }
+
+    databaseConnection = createDatabaseConnection({
+      databaseFilePath: options.databaseFilePath,
+    });
+    runMigrations(databaseConnection.client);
+
+    return createSqliteTodoRepository({
+      database: databaseConnection.db,
+    });
+  })();
   const resolvedCreateTodoUseCase =
     options.createTodoUseCase ??
-    (() => {
-      databaseConnection = createDatabaseConnection({
-        databaseFilePath: options.databaseFilePath,
-      });
-      runMigrations(databaseConnection.client);
-
-      return createTodoUseCase({
-        todoRepository: createSqliteTodoRepository({
-          database: databaseConnection.db,
-        }),
-      });
-    })();
+    createTodoUseCase({
+      todoRepository: resolvedTodoRepository!,
+    });
+  const resolvedGetTodosUseCase =
+    options.getTodosUseCase ??
+    getTodosUseCase({
+      todoRepository: resolvedTodoRepository!,
+    });
 
   app.addHook("onClose", () => {
     databaseConnection?.close();
@@ -91,6 +103,7 @@ export function createApp(options: CreateAppOptions = {}) {
   });
   registerTodoRoutes(app, {
     createTodoUseCase: resolvedCreateTodoUseCase,
+    getTodosUseCase: resolvedGetTodosUseCase,
   });
 
   return app;

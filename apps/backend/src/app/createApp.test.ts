@@ -323,4 +323,129 @@ describe("createApp", () => {
 
     await rm(temporaryDirectoryPath, { force: true, recursive: true });
   });
+
+  it("GET /todos は空の一覧を返す", async () => {
+    const { databaseFilePath, logFilePath, temporaryDirectoryPath } =
+      await createTemporaryAppResources();
+    const app = createApp({ databaseFilePath, logFilePath });
+
+    try {
+      const response = await app.inject({
+        method: "GET",
+        url: "/todos",
+      });
+
+      expect(response.statusCode).toBe(200);
+      expect(response.json()).toEqual({
+        todos: [],
+      });
+    } finally {
+      await app.close();
+      await rm(temporaryDirectoryPath, { force: true, recursive: true });
+    }
+  });
+
+  it("GET /todos は保存済み Todo 一覧を返す", async () => {
+    const { databaseFilePath, logFilePath, temporaryDirectoryPath } =
+      await createTemporaryAppResources();
+    const app = createApp({ databaseFilePath, logFilePath });
+
+    try {
+      const firstResponse = await app.inject({
+        method: "POST",
+        payload: {
+          title: "最初の Todo",
+        },
+        url: "/todos",
+      });
+      const secondResponse = await app.inject({
+        method: "POST",
+        payload: {
+          title: "二番目の Todo",
+        },
+        url: "/todos",
+      });
+      const firstTodo = firstResponse.json() as {
+        todo: {
+          createdAt: string;
+          id: string;
+          isCompleted: boolean;
+          title: string;
+          updatedAt: string;
+        };
+      };
+      const secondTodo = secondResponse.json() as {
+        todo: {
+          createdAt: string;
+          id: string;
+          isCompleted: boolean;
+          title: string;
+          updatedAt: string;
+        };
+      };
+
+      const response = await app.inject({
+        method: "GET",
+        url: "/todos",
+      });
+
+      expect(response.statusCode).toBe(200);
+      expect(response.json()).toEqual({
+        todos: [secondTodo.todo, firstTodo.todo],
+      });
+    } finally {
+      await app.close();
+      await rm(temporaryDirectoryPath, { force: true, recursive: true });
+    }
+  });
+
+  it("GET /todos の一覧取得失敗時は 500 と requestId を返し、ログへ残す", async () => {
+    const { databaseFilePath, logFilePath, temporaryDirectoryPath } =
+      await createTemporaryAppResources();
+    const app = createApp({
+      databaseFilePath,
+      getTodosUseCase: {
+        async execute() {
+          throw new Error("一覧取得に失敗しました");
+        },
+      },
+      logFilePath,
+    });
+
+    try {
+      const response = await app.inject({
+        method: "GET",
+        url: "/todos",
+      });
+
+      expect(response.statusCode).toBe(500);
+      expect(response.json()).toEqual({
+        message: "サーバーエラーが発生しました。",
+        requestId: expect.any(String),
+      });
+    } finally {
+      await app.close();
+    }
+
+    const logEntries = parseLogEntries(await readFile(logFilePath, "utf8"));
+
+    expect(logEntries).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          err: expect.objectContaining({
+            message: "一覧取得に失敗しました",
+            stack: expect.stringContaining("Error: 一覧取得に失敗しました"),
+          }),
+          level: 50,
+          req: expect.objectContaining({
+            method: "GET",
+            url: "/todos",
+          }),
+          reqId: expect.any(String),
+        }),
+      ]),
+    );
+
+    await rm(temporaryDirectoryPath, { force: true, recursive: true });
+  });
 });

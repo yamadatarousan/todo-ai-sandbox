@@ -13,24 +13,24 @@
 - なし
 
 ## 次
+- なし
 
-### T-005 `GET /todos` を schema 付きで実装する
-- 目的: Todo 一覧取得 API を作り、保存済みデータを安全に読み出せる入口を作る。
-- 範囲: route schema、use-case、repository の一覧取得、正常時 response
-- 範囲外: Todo 追加 UI、完了更新、削除
-- 失敗検知: 一覧取得失敗が `5xx` と log で追える状態にする。
-- 被害限定: 一覧取得の不具合を更新や削除へ波及させない。
+### T-006 Frontend で Todo 一覧を表示する
+- 目的: Backend の `GET /todos` を使って、Todo 一覧の最初の表示面を作る。
+- 範囲: 一覧取得、読み込み中表示、空状態表示、失敗表示
+- 範囲外: Todo 追加フォーム、完了更新、削除
+- 失敗検知: 一覧取得失敗を画面上で確認でき、成功したように見せない状態にする。
+- 被害限定: 一覧取得失敗を表示レイヤーに閉じ込め、他の操作へ波及させない。
 - 完了条件:
-  - `GET /todos` が schema 付きで定義されている
-  - 保存済み Todo を配列で返せる
-  - 想定外失敗時に `5xx` と log が残る
+  - Frontend が `GET /todos` を呼び出せる
+  - 読み込み中、空状態、一覧表示、失敗表示がある
+  - API が `500` を返したときに失敗表示が出る
 - 想定テスト:
-  - 空の一覧取得確認
-  - 保存済み Todo の一覧取得確認
-  - 保存層失敗時の `5xx` 確認
+  - 空状態の表示確認
+  - 保存済み Todo 一覧の表示確認
+  - `500` 時の失敗表示確認
 
 ## 候補
-- T-006 Frontend で Todo 一覧を表示する
 - T-007 Frontend で Todo を追加し、保存失敗を表示する
 - T-008 Todo の完了切り替えを実装する
 - T-009 Todo 削除に確認ダイアログを入れる
@@ -173,6 +173,34 @@
   - `apps/backend/src/use-cases/createTodoUseCase.test.ts` に use-case テストを追加済み
   - `apps/backend/src/repositories/createSqliteTodoRepository.test.ts` に repository 結合テストを追加済み
   - `README.md` に `POST /todos` の呼び出し例を追加済み
+  - 標準環境で `npm run test --workspace @todo-ai-sandbox/backend` 実行済み
+  - 標準環境で `npm run build --workspace @todo-ai-sandbox/backend` 実行済み
+  - 標準環境で `TODO_AI_DATABASE_PATH=<temp>` を付けた `npm run db:migrate --workspace @todo-ai-sandbox/backend` 実行済み
+  - 標準環境で `npm test` 実行済み
+
+### T-005 `GET /todos` を schema 付きで実装する
+- 目的: Todo 一覧取得 API を作り、保存済みデータを安全に読み出せる入口を作る。
+- 範囲: route schema、use-case、repository の一覧取得、正常時 response
+- 範囲外: Todo 追加 UI、完了更新、削除
+- 失敗検知: 一覧取得失敗が `5xx` と log で追える状態にする。
+- 被害限定: 一覧取得の不具合を更新や削除へ波及させない。
+- 完了条件:
+  - `GET /todos` が schema 付きで定義されている
+  - 保存済み Todo を配列で返せる
+  - 想定外失敗時に `5xx` と log が残る
+- 想定テスト:
+  - 空の一覧取得確認
+  - 保存済み Todo の一覧取得確認
+  - 保存層失敗時の `5xx` 確認
+- 証拠:
+  - `apps/backend/src/routes/registerTodoRoutes.ts` に `GET /todos` route と response schema を追加済み
+  - `apps/backend/src/use-cases/getTodosUseCase.ts` に一覧取得 use-case を追加済み
+  - `apps/backend/src/repositories/createSqliteTodoRepository.ts` に一覧取得と並び順を追加済み
+  - `apps/backend/src/app/createApp.ts` に `GET /todos` 用の依存注入を追加済み
+  - `apps/backend/src/app/createApp.test.ts` に `GET /todos` の空配列 / 一覧取得 / 500 テストを追加済み
+  - `apps/backend/src/use-cases/getTodosUseCase.test.ts` に use-case テストを追加済み
+  - `apps/backend/src/repositories/createSqliteTodoRepository.test.ts` に一覧取得テストを追加済み
+  - `README.md` に `GET /todos` の呼び出し例を追加済み
   - 標準環境で `npm run test --workspace @todo-ai-sandbox/backend` 実行済み
   - 標準環境で `npm run build --workspace @todo-ai-sandbox/backend` 実行済み
   - 標準環境で `TODO_AI_DATABASE_PATH=<temp>` を付けた `npm run db:migrate --workspace @todo-ai-sandbox/backend` 実行済み

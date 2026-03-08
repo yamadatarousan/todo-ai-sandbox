@@ -60,4 +60,50 @@ describe("createSqliteTodoRepository", () => {
       await rm(temporaryDirectoryPath, { force: true, recursive: true });
     }
   });
+
+  it("保存済み Todo 一覧を新しい順で返す", async () => {
+    const { connection, temporaryDirectoryPath } = await createTemporaryDatabase();
+
+    try {
+      runMigrations(connection.client);
+      const repository = createSqliteTodoRepository({
+        database: connection.db,
+      });
+
+      await repository.create({
+        createdAt: new Date("2026-03-07T00:00:00.000Z"),
+        id: "todo-1",
+        isCompleted: false,
+        title: "最初の Todo",
+        updatedAt: new Date("2026-03-07T00:00:00.000Z"),
+      });
+      await repository.create({
+        createdAt: new Date("2026-03-08T00:00:00.000Z"),
+        id: "todo-2",
+        isCompleted: true,
+        title: "二番目の Todo",
+        updatedAt: new Date("2026-03-08T00:00:00.000Z"),
+      });
+
+      await expect(repository.list()).resolves.toEqual([
+        {
+          createdAt: new Date("2026-03-08T00:00:00.000Z"),
+          id: "todo-2",
+          isCompleted: true,
+          title: "二番目の Todo",
+          updatedAt: new Date("2026-03-08T00:00:00.000Z"),
+        },
+        {
+          createdAt: new Date("2026-03-07T00:00:00.000Z"),
+          id: "todo-1",
+          isCompleted: false,
+          title: "最初の Todo",
+          updatedAt: new Date("2026-03-07T00:00:00.000Z"),
+        },
+      ]);
+    } finally {
+      connection.close();
+      await rm(temporaryDirectoryPath, { force: true, recursive: true });
+    }
+  });
 });

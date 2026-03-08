@@ -6,9 +6,11 @@ import {
   type ErrorResponse,
 } from "../shared/requestError";
 import type { CreateTodoUseCase } from "../use-cases/createTodoUseCase";
+import type { GetTodosUseCase } from "../use-cases/getTodosUseCase";
 
 type RegisterTodoRoutesOptions = {
   createTodoUseCase: CreateTodoUseCase;
+  getTodosUseCase: GetTodosUseCase;
 };
 
 type CreateTodoRequestBody = {
@@ -26,6 +28,10 @@ type CreateTodoSuccessResponse = {
 };
 
 type CreateTodoRouteReply = CreateTodoSuccessResponse | ErrorResponse;
+type GetTodosSuccessResponse = {
+  todos: CreateTodoSuccessResponse["todo"][];
+};
+type GetTodosRouteReply = GetTodosSuccessResponse | ErrorResponse;
 
 const createTodoBodySchema = {
   additionalProperties: false,
@@ -66,10 +72,49 @@ const createTodoSuccessResponseSchema = {
   type: "object",
 } as const;
 
+const getTodosSuccessResponseSchema = {
+  additionalProperties: false,
+  properties: {
+    todos: {
+      items: createTodoSuccessResponseSchema.properties.todo,
+      type: "array",
+    },
+  },
+  required: ["todos"],
+  type: "object",
+} as const;
+
 export function registerTodoRoutes(
   app: FastifyInstance<any, any, any, any>,
   options: RegisterTodoRoutesOptions,
 ) {
+  app.get<{
+    Reply: GetTodosRouteReply;
+  }>(
+    "/todos",
+    {
+      schema: {
+        response: {
+          200: getTodosSuccessResponseSchema,
+          500: internalServerErrorResponseSchema,
+        },
+      },
+    },
+    async () => {
+      const todos = await options.getTodosUseCase.execute();
+
+      return {
+        todos: todos.map((todo) => ({
+          createdAt: todo.createdAt.toISOString(),
+          id: todo.id,
+          isCompleted: todo.isCompleted,
+          title: todo.title,
+          updatedAt: todo.updatedAt.toISOString(),
+        })),
+      };
+    },
+  );
+
   app.post<{
     Body: CreateTodoRequestBody;
     Reply: CreateTodoRouteReply;

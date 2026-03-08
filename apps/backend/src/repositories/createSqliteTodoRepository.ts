@@ -1,3 +1,4 @@
+import { desc } from "drizzle-orm";
 import type { BetterSQLite3Database } from "drizzle-orm/better-sqlite3";
 import * as databaseSchema from "../database/schema";
 import { todos } from "../database/schema";
@@ -16,6 +17,13 @@ export function createSqliteTodoRepository(
       options.database.insert(todos).values(todo).run();
 
       return todo;
+    },
+    async list() {
+      return options.database
+        .select()
+        .from(todos)
+        .orderBy(desc(todos.createdAt), desc(todos.id))
+        .all();
     },
   };
 }
