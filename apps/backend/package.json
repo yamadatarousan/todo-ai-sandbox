@@ -6,13 +6,17 @@
   "scripts": {
     "dev": "tsx watch src/server.ts",
     "build": "tsc --noEmit",
+    "db:migrate": "node --import tsx src/database/runMigrations.ts",
     "test": "vitest run"
   },
   "dependencies": {
+    "better-sqlite3": "^12.2.0",
+    "drizzle-orm": "^0.44.5",
     "fastify": "^5.6.1",
     "pino": "^10.3.1"
   },
   "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
     "@types/node": "^24.3.0",
     "tsx": "^4.20.5",
     "typescript": "^5.9.2",

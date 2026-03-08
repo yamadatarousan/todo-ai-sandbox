@@ -14,24 +14,23 @@
 
 ## 次
 
-### T-003 SQLite と Drizzle ORM で Todo テーブルを作る
-- 目的: Todo の永続化基盤を作り、以後の API 実装で壊れ方を Database 側でも狭められるようにする。
-- 範囲: SQLite 接続、Drizzle ORM 導入、Todo テーブル定義、migration の土台、基本制約
-- 範囲外: Todo API の実装、Frontend 表示、外部 Database
-- 失敗検知: 接続失敗、migration 不整合、制約違反が早い段階で分かる状態にする。
-- 被害限定: 空文字や長すぎる title を Database 制約でも止め、Backend の不具合だけで壊れないようにする。
+### T-004 `POST /todos` を schema 付きで実装する
+- 目的: Todo 追加 API を最小で作り、入力不正と保存失敗を静かに通さない入口を作る。
+- 範囲: route schema、use-case、repository の最小実装、成功時 response
+- 範囲外: Todo 一覧取得、完了更新、Frontend の追加フォーム
+- 失敗検知: バリデーション違反と保存失敗が response と log で追える状態にする。
+- 被害限定: 不正な入力や Database 制約違反を 1 件の追加失敗に閉じ込める。
 - 完了条件:
-  - SQLite 接続が作成されている
-  - Drizzle ORM の schema に Todo テーブルが定義されている
-  - Todo テーブルの基本制約が入っている
-  - migration の実行方法または確認方法が残っている
+  - `POST /todos` が schema 付きで定義されている
+  - 正常系で Todo を 1 件保存できる
+  - 不正入力時に `4xx` を返す
+  - 想定外失敗時に `5xx` と log が残る
 - 想定テスト:
-  - schema 定義の確認
-  - SQLite を使った最小の repository または migration 確認
-- 証拠: 未着手
+  - 正常な追加 request の確認
+  - 空文字や長すぎる title の拒否確認
+  - 保存失敗時の `5xx` 確認
 
 ## 候補
-- T-004 `POST /todos` を schema 付きで実装する
 - T-005 `GET /todos` を schema 付きで実装する
 - T-006 Frontend で Todo 一覧を表示する
 - T-007 Frontend で Todo を追加し、保存失敗を表示する
@@ -123,3 +122,31 @@
   - 標準環境で `npm test` 実行済み
   - 標準環境で `npm run build --workspace @todo-ai-sandbox/backend` 実行済み
   - 注記: `node --import tsx apps/backend/src/server.ts` による手動の `listen` 確認は sandbox の `EPERM` で未実施
+
+### T-003 SQLite と Drizzle ORM で Todo テーブルを作る
+- 目的: Todo の永続化基盤を作り、以後の API 実装で壊れ方を Database 側でも狭められるようにする。
+- 範囲: SQLite 接続、Drizzle ORM 導入、Todo テーブル定義、migration の土台、基本制約
+- 範囲外: Todo API の実装、Frontend 表示、外部 Database
+- 失敗検知: 接続失敗、migration 不整合、制約違反が早い段階で分かる状態にする。
+- 被害限定: 空文字や長すぎる title を Database 制約でも止め、Backend の不具合だけで壊れないようにする。
+- 完了条件:
+  - SQLite 接続が作成されている
+  - Drizzle ORM の schema に Todo テーブルが定義されている
+  - Todo テーブルの基本制約が入っている
+  - migration の実行方法または確認方法が残っている
+- 想定テスト:
+  - schema 定義の確認
+  - SQLite を使った最小の repository または migration 確認
+- 証拠:
+  - `apps/backend/src/database/createDatabaseConnection.ts` を追加済み
+  - `apps/backend/src/database/schema.ts` に `todos` schema と制約を追加済み
+  - `apps/backend/src/database/migrations/0001_create_todos.sql` を追加済み
+  - `apps/backend/src/database/migrate.ts` に migration 実行基盤を追加済み
+  - `apps/backend/src/database/migrate.test.ts` に migration と制約の結合テストを追加済み
+  - `apps/backend/package.json` に `db:migrate` script と SQLite / Drizzle 依存関係を追加済み
+  - `README.md` に migration コマンドと既定 DB パスを追加済み
+  - 標準環境で `npm install` 実行済み
+  - 標準環境で `npm run test --workspace @todo-ai-sandbox/backend` 実行済み
+  - 標準環境で `npm run build --workspace @todo-ai-sandbox/backend` 実行済み
+  - 標準環境で `TODO_AI_DATABASE_PATH=<temp>` を付けた `npm run db:migrate --workspace @todo-ai-sandbox/backend` 実行済み
+  - 標準環境で `npm test` 実行済み
