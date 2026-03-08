@@ -1,6 +1,7 @@
-import { fireEvent, render, screen, waitFor } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor, within } from "@testing-library/react";
 import { App } from "./App";
 import { createTodoSaveError } from "./features/todos/createTodo";
+import { createTodoDeleteError } from "./features/todos/deleteTodo";
 import { TodoListLoadError, type TodoSummary } from "./features/todos/fetchTodos";
 import { createTodoCompletionUpdateError } from "./features/todos/updateTodoCompletion";
 
@@ -361,6 +362,169 @@ describe("App", () => {
     expect(screen.getByText("完了")).toBeInTheDocument();
     expect(
       screen.getByRole("button", { name: "未完了に戻す" }),
+    ).toBeInTheDocument();
+    expect(screen.getByRole("heading", { name: "別の Todo" })).toBeInTheDocument();
+  });
+
+  it("削除ボタンを押すと確認ダイアログが開き、キャンセルで閉じる", async () => {
+    const deleteTodo = vi.fn();
+
+    render(
+      <App
+        deleteTodo={deleteTodo}
+        loadTodos={async () => [
+          {
+            createdAt: "2026-03-08T00:00:00.000Z",
+            id: "todo-1",
+            isCompleted: false,
+            title: "削除対象の Todo",
+            updatedAt: "2026-03-08T00:00:00.000Z",
+          },
+        ]}
+      />,
+    );
+
+    await screen.findByRole("heading", { name: "削除対象の Todo" });
+
+    fireEvent.click(screen.getByRole("button", { name: "削除する" }));
+
+    const deleteDialog = screen.getByRole("dialog");
+
+    expect(
+      screen.getByRole("heading", { name: "Todo を削除しますか？" }),
+    ).toBeInTheDocument();
+    expect(within(deleteDialog).getByText("削除対象の Todo")).toBeInTheDocument();
+
+    fireEvent.click(screen.getByRole("button", { name: "キャンセル" }));
+
+    await waitFor(() => {
+      expect(
+        screen.queryByRole("heading", { name: "Todo を削除しますか？" }),
+      ).not.toBeInTheDocument();
+    });
+    expect(deleteTodo).not.toHaveBeenCalled();
+  });
+
+  it("削除確認後は削除中表示を出し、成功したら対象 Todo を一覧から外す", async () => {
+    const deferred = createDeferredPromise<string>();
+    const deleteTodo = vi.fn().mockImplementation(() => deferred.promise);
+
+    render(
+      <App
+        deleteTodo={deleteTodo}
+        loadTodos={async () => [
+          {
+            createdAt: "2026-03-08T00:00:00.000Z",
+            id: "todo-1",
+            isCompleted: false,
+            title: "削除する Todo",
+            updatedAt: "2026-03-08T00:00:00.000Z",
+          },
+          {
+            createdAt: "2026-03-07T00:00:00.000Z",
+            id: "todo-2",
+            isCompleted: false,
+            title: "残る Todo",
+            updatedAt: "2026-03-07T00:00:00.000Z",
+          },
+        ]}
+      />,
+    );
+
+    await screen.findByRole("heading", { name: "削除する Todo" });
+
+    fireEvent.click(screen.getAllByRole("button", { name: "削除する" })[0]);
+    fireEvent.click(screen.getByRole("button", { name: "削除を確定する" }));
+
+    expect(deleteTodo).toHaveBeenCalledWith("todo-1");
+    expect(
+      screen.getByRole("button", { name: "削除中..." }),
+    ).toBeDisabled();
+
+    deferred.resolve("todo-1");
+
+    await waitFor(() => {
+      expect(
+        screen.queryByRole("heading", { name: "削除する Todo" }),
+      ).not.toBeInTheDocument();
+    });
+    expect(screen.getByRole("heading", { name: "残る Todo" })).toBeInTheDocument();
+    expect(screen.getByText("1 件の Todo を表示しています。")).toBeInTheDocument();
+  });
+
+  it("削除が 404 で失敗したときはダイアログ内に失敗表示を出し、Todo は残す", async () => {
+    render(
+      <App
+        deleteTodo={async () => {
+          throw createTodoDeleteError("Todo が見つかりません。", {
+            requestId: "req-delete-404",
+          });
+        }}
+        loadTodos={async () => [
+          {
+            createdAt: "2026-03-08T00:00:00.000Z",
+            id: "todo-1",
+            isCompleted: false,
+            title: "見つからない Todo",
+            updatedAt: "2026-03-08T00:00:00.000Z",
+          },
+        ]}
+      />,
+    );
+
+    await screen.findByRole("heading", { name: "見つからない Todo" });
+
+    fireEvent.click(screen.getByRole("button", { name: "削除する" }));
+    fireEvent.click(screen.getByRole("button", { name: "削除を確定する" }));
+
+    expect(await screen.findByText("Todo が見つかりません。")).toBeInTheDocument();
+    expect(screen.getByText("requestId: req-delete-404")).toBeInTheDocument();
+    expect(
+      screen.getByText("削除に失敗したため、この Todo は一覧に残しています。"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "見つからない Todo" }),
+    ).toBeInTheDocument();
+  });
+
+  it("削除が 5xx で失敗したときも成功したように見せず、ダイアログに閉じ込める", async () => {
+    render(
+      <App
+        deleteTodo={async () => {
+          throw createTodoDeleteError("サーバーエラーが発生しました。", {
+            requestId: "req-delete-500",
+          });
+        }}
+        loadTodos={async () => [
+          {
+            createdAt: "2026-03-08T00:00:00.000Z",
+            id: "todo-1",
+            isCompleted: false,
+            title: "削除失敗する Todo",
+            updatedAt: "2026-03-08T00:00:00.000Z",
+          },
+          {
+            createdAt: "2026-03-07T00:00:00.000Z",
+            id: "todo-2",
+            isCompleted: false,
+            title: "別の Todo",
+            updatedAt: "2026-03-07T00:00:00.000Z",
+          },
+        ]}
+      />,
+    );
+
+    await screen.findByRole("heading", { name: "削除失敗する Todo" });
+
+    fireEvent.click(screen.getAllByRole("button", { name: "削除する" })[0]);
+    fireEvent.click(screen.getByRole("button", { name: "削除を確定する" }));
+
+    expect(
+      await screen.findByText("サーバーエラーが発生しました。"),
+    ).toBeInTheDocument();
+    expect(screen.getByText("requestId: req-delete-500")).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "削除失敗する Todo" }),
     ).toBeInTheDocument();
     expect(screen.getByRole("heading", { name: "別の Todo" })).toBeInTheDocument();
   });

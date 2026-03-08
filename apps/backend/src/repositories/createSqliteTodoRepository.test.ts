@@ -107,6 +107,51 @@ describe("createSqliteTodoRepository", () => {
     }
   });
 
+  it("保存済み Todo を 1 件削除する", async () => {
+    const { connection, temporaryDirectoryPath } = await createTemporaryDatabase();
+
+    try {
+      runMigrations(connection.client);
+      const repository = createSqliteTodoRepository({
+        database: connection.db,
+      });
+
+      await repository.create({
+        createdAt: new Date("2026-03-08T00:00:00.000Z"),
+        id: "todo-1",
+        isCompleted: false,
+        title: "削除する Todo",
+        updatedAt: new Date("2026-03-08T00:00:00.000Z"),
+      });
+
+      await expect(repository.deleteById("todo-1")).resolves.toBe(true);
+      expect(
+        connection.client
+          .prepare("select id from todos where id = ?")
+          .get("todo-1"),
+      ).toBeUndefined();
+    } finally {
+      connection.close();
+      await rm(temporaryDirectoryPath, { force: true, recursive: true });
+    }
+  });
+
+  it("存在しない Todo の削除では false を返す", async () => {
+    const { connection, temporaryDirectoryPath } = await createTemporaryDatabase();
+
+    try {
+      runMigrations(connection.client);
+      const repository = createSqliteTodoRepository({
+        database: connection.db,
+      });
+
+      await expect(repository.deleteById("missing-todo")).resolves.toBe(false);
+    } finally {
+      connection.close();
+      await rm(temporaryDirectoryPath, { force: true, recursive: true });
+    }
+  });
+
   it("保存済み Todo の完了状態を更新する", async () => {
     const { connection, temporaryDirectoryPath } = await createTemporaryDatabase();
 

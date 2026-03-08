@@ -6,6 +6,10 @@ import {
   type TodoSaveIssue,
 } from "./features/todos/createTodo";
 import {
+  deleteTodo as deleteTodoRequestDefault,
+  TodoDeleteError,
+} from "./features/todos/deleteTodo";
+import {
   fetchTodos,
   TodoListLoadError,
   type TodoSummary,
@@ -16,6 +20,7 @@ import {
 } from "./features/todos/updateTodoCompletion";
 
 type AppProps = {
+  deleteTodo?: (id: string) => Promise<string>;
   loadTodos?: () => Promise<TodoSummary[]>;
   saveTodo?: (title: string) => Promise<TodoSummary>;
   updateTodoCompletion?: (
@@ -65,7 +70,31 @@ type TodoCompletionState =
       requestId?: string;
     };
 
+type TodoDeleteState =
+  | {
+      status: "idle";
+    }
+  | {
+      status: "deleting";
+    }
+  | {
+      status: "error";
+      message: string;
+      requestId?: string;
+    };
+
+type TodoDeleteDialogState =
+  | {
+      status: "closed";
+    }
+  | {
+      deleteState: TodoDeleteState;
+      status: "open";
+      todo: TodoSummary;
+    };
+
 export function App({
+  deleteTodo = deleteTodoRequestDefault,
   loadTodos = fetchTodos,
   saveTodo = createTodo,
   updateTodoCompletion: updateTodoCompletionRequest = updateTodoCompletion,
@@ -77,6 +106,10 @@ export function App({
   const [todoSaveState, setTodoSaveState] = useState<TodoSaveState>({
     status: "idle",
   });
+  const [todoDeleteDialogState, setTodoDeleteDialogState] =
+    useState<TodoDeleteDialogState>({
+      status: "closed",
+    });
   const [todoCompletionStates, setTodoCompletionStates] = useState<
     Record<string, TodoCompletionState>
   >({});
@@ -252,6 +285,93 @@ export function App({
       });
   }
 
+  function handleTodoDeleteDialogOpen(todo: TodoSummary) {
+    setTodoDeleteDialogState({
+      deleteState: {
+        status: "idle",
+      },
+      status: "open",
+      todo,
+    });
+  }
+
+  function handleTodoDeleteDialogClose() {
+    if (
+      todoDeleteDialogState.status === "open" &&
+      todoDeleteDialogState.deleteState.status === "deleting"
+    ) {
+      return;
+    }
+
+    setTodoDeleteDialogState({
+      status: "closed",
+    });
+  }
+
+  function handleTodoDeleteConfirm() {
+    if (
+      todoDeleteDialogState.status !== "open" ||
+      todoListState.status !== "success" ||
+      todoDeleteDialogState.deleteState.status === "deleting"
+    ) {
+      return;
+    }
+
+    const deleteTargetTodo = todoDeleteDialogState.todo;
+
+    setTodoDeleteDialogState({
+      deleteState: {
+        status: "deleting",
+      },
+      status: "open",
+      todo: deleteTargetTodo,
+    });
+
+    void deleteTodo(deleteTargetTodo.id)
+      .then((deletedTodoId) => {
+        setTodoListState((currentState) => {
+          if (currentState.status !== "success") {
+            return currentState;
+          }
+
+          return {
+            status: "success",
+            todos: currentState.todos.filter((todo) => todo.id !== deletedTodoId),
+          };
+        });
+        setTodoCompletionStates((currentStates) =>
+          omitTodoState(currentStates, deleteTargetTodo.id),
+        );
+        setTodoDeleteDialogState({
+          status: "closed",
+        });
+      })
+      .catch((error: unknown) => {
+        if (error instanceof TodoDeleteError) {
+          setTodoDeleteDialogState({
+            deleteState: {
+              message: error.message,
+              requestId: error.requestId,
+              status: "error",
+            },
+            status: "open",
+            todo: deleteTargetTodo,
+          });
+
+          return;
+        }
+
+        setTodoDeleteDialogState({
+          deleteState: {
+            message: "Todo の削除に失敗しました。",
+            status: "error",
+          },
+          status: "open",
+          todo: deleteTargetTodo,
+        });
+      });
+  }
+
   const isTodoSubmitDisabled =
     todoListState.status !== "success" || todoSaveState.status === "saving";
 
@@ -377,6 +497,13 @@ export function App({
                           ? "未完了に戻す"
                           : "完了にする"}
                     </button>
+                    <button
+                      className="todo-delete-button"
+                      onClick={() => handleTodoDeleteDialogOpen(todo)}
+                      type="button"
+                    >
+                      削除する
+                    </button>
                   </div>
                   {todoCompletionState.status === "error" ? (
                     <div className="todo-inline-error" role="alert">
@@ -396,6 +523,54 @@ export function App({
           </section>
         ) : null}
       </section>
+      {todoDeleteDialogState.status === "open" ? (
+        <div className="dialog-backdrop">
+          <section
+            aria-labelledby="delete-dialog-title"
+            aria-modal="true"
+            className="confirm-dialog"
+            role="dialog"
+          >
+            <p className="status-label">Delete Todo</p>
+            <h2 id="delete-dialog-title">Todo を削除しますか？</h2>
+            <p className="dialog-target-title">{todoDeleteDialogState.todo.title}</p>
+            <p className="dialog-copy">
+              削除は 1 件ずつ確認して実行します。成功したときだけ一覧から外します。
+            </p>
+            {todoDeleteDialogState.deleteState.status === "error" ? (
+              <div className="status-card dialog-error-card" role="alert">
+                <p>{todoDeleteDialogState.deleteState.message}</p>
+                {todoDeleteDialogState.deleteState.requestId ? (
+                  <p className="request-id">
+                    requestId: {todoDeleteDialogState.deleteState.requestId}
+                  </p>
+                ) : null}
+                <p>削除に失敗したため、この Todo は一覧に残しています。</p>
+              </div>
+            ) : null}
+            <div className="dialog-actions">
+              <button
+                className="dialog-cancel-button"
+                disabled={todoDeleteDialogState.deleteState.status === "deleting"}
+                onClick={handleTodoDeleteDialogClose}
+                type="button"
+              >
+                キャンセル
+              </button>
+              <button
+                className="dialog-confirm-button"
+                disabled={todoDeleteDialogState.deleteState.status === "deleting"}
+                onClick={handleTodoDeleteConfirm}
+                type="button"
+              >
+                {todoDeleteDialogState.deleteState.status === "deleting"
+                  ? "削除中..."
+                  : "削除を確定する"}
+              </button>
+            </div>
+          </section>
+        </div>
+      ) : null}
     </main>
   );
 }
@@ -416,4 +591,10 @@ function getTodoCompletionState(
   return todoCompletionStates[todoId] ?? {
     status: "idle",
   };
+}
+
+function omitTodoState<T>(todoStates: Record<string, T>, todoId: string) {
+  const { [todoId]: _removedTodoState, ...remainingTodoStates } = todoStates;
+
+  return remainingTodoStates;
 }

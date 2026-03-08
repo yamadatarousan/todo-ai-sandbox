@@ -249,11 +249,15 @@ body {
 
 .todo-card-actions {
   display: flex;
+  gap: 0.75rem;
   justify-content: flex-end;
   margin-top: 1rem;
 }
 
-.todo-toggle-button {
+.todo-toggle-button,
+.todo-delete-button,
+.dialog-cancel-button,
+.dialog-confirm-button {
   background: rgba(255, 251, 245, 0.9);
   border: 1px solid rgba(122, 90, 58, 0.28);
   border-radius: 999px;
@@ -263,7 +267,15 @@ body {
   padding: 0.65rem 1rem;
 }
 
-.todo-toggle-button:disabled {
+.todo-delete-button {
+  background: rgba(137, 62, 35, 0.12);
+  color: #7a2f15;
+}
+
+.todo-toggle-button:disabled,
+.todo-delete-button:disabled,
+.dialog-cancel-button:disabled,
+.dialog-confirm-button:disabled {
   background: rgba(216, 204, 188, 0.9);
   color: #7f6a54;
   cursor: not-allowed;
@@ -283,6 +295,58 @@ body {
 
 .todo-inline-error p:first-child {
   margin-top: 0;
+}
+
+.dialog-backdrop {
+  align-items: center;
+  background: rgba(54, 39, 23, 0.35);
+  display: flex;
+  inset: 0;
+  justify-content: center;
+  padding: 1rem;
+  position: fixed;
+}
+
+.confirm-dialog {
+  background: linear-gradient(180deg, rgba(255, 248, 239, 0.98), #fff5e5);
+  border: 1px solid rgba(91, 61, 30, 0.18);
+  border-radius: 1.5rem;
+  box-shadow: 0 1rem 3rem rgba(52, 34, 16, 0.24);
+  max-width: 30rem;
+  padding: 1.35rem;
+  width: min(100%, 30rem);
+}
+
+.confirm-dialog h2,
+.confirm-dialog p {
+  margin: 0;
+}
+
+.dialog-target-title {
+  font-size: 1.25rem;
+  font-weight: 700;
+  margin-top: 0.5rem;
+}
+
+.dialog-copy {
+  color: #5d4a36;
+  margin-top: 0.9rem;
+}
+
+.dialog-error-card {
+  margin-top: 1rem;
+}
+
+.dialog-actions {
+  display: flex;
+  gap: 0.75rem;
+  justify-content: flex-end;
+  margin-top: 1.1rem;
+}
+
+.dialog-confirm-button {
+  background: linear-gradient(180deg, #89462a, #6e311c);
+  color: #fff7f0;
 }
 
 @media (max-width: 640px) {
@@ -315,7 +379,14 @@ body {
     justify-content: stretch;
   }
 
-  .todo-toggle-button {
+  .todo-toggle-button,
+  .todo-delete-button,
+  .dialog-cancel-button,
+  .dialog-confirm-button {
     width: 100%;
+  }
+
+  .dialog-actions {
+    flex-direction: column-reverse;
   }
 }

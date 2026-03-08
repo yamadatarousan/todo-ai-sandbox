@@ -18,6 +18,14 @@ export function createSqliteTodoRepository(
 
       return todo;
     },
+    async deleteById(id) {
+      const deletedResult = options.database
+        .delete(todos)
+        .where(eq(todos.id, id))
+        .run();
+
+      return deletedResult.changes > 0;
+    },
     async list() {
       return options.database
         .select()

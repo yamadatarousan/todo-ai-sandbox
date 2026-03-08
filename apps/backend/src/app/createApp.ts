@@ -12,6 +12,7 @@ import {
 } from "../shared/requestError";
 import { registerTodoRoutes } from "../routes/registerTodoRoutes";
 import { createTodoUseCase, type CreateTodoUseCase } from "../use-cases/createTodoUseCase";
+import { deleteTodoUseCase, type DeleteTodoUseCase } from "../use-cases/deleteTodoUseCase";
 import { getTodosUseCase, type GetTodosUseCase } from "../use-cases/getTodosUseCase";
 import {
   updateTodoCompletionUseCase,
@@ -22,6 +23,7 @@ import { createBackendLogger, type CreateBackendLoggerOptions } from "./createLo
 export type CreateAppOptions = CreateBackendLoggerOptions &
   CreateDatabaseConnectionOptions & {
     createTodoUseCase?: CreateTodoUseCase;
+    deleteTodoUseCase?: DeleteTodoUseCase;
     getTodosUseCase?: GetTodosUseCase;
     updateTodoCompletionUseCase?: UpdateTodoCompletionUseCase;
   };
@@ -37,6 +39,7 @@ export function createApp(options: CreateAppOptions = {}) {
   const resolvedTodoRepository = (() => {
     if (
       options.createTodoUseCase &&
+      options.deleteTodoUseCase &&
       options.getTodosUseCase &&
       options.updateTodoCompletionUseCase
     ) {
@@ -60,6 +63,11 @@ export function createApp(options: CreateAppOptions = {}) {
   const resolvedGetTodosUseCase =
     options.getTodosUseCase ??
     getTodosUseCase({
+      todoRepository: resolvedTodoRepository!,
+    });
+  const resolvedDeleteTodoUseCase =
+    options.deleteTodoUseCase ??
+    deleteTodoUseCase({
       todoRepository: resolvedTodoRepository!,
     });
   const resolvedUpdateTodoCompletionUseCase =
@@ -125,6 +133,7 @@ export function createApp(options: CreateAppOptions = {}) {
   });
   registerTodoRoutes(app, {
     createTodoUseCase: resolvedCreateTodoUseCase,
+    deleteTodoUseCase: resolvedDeleteTodoUseCase,
     getTodosUseCase: resolvedGetTodosUseCase,
     updateTodoCompletionUseCase: resolvedUpdateTodoCompletionUseCase,
   });

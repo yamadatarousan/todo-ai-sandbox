@@ -13,15 +13,49 @@
 - なし
 
 ## 次
-- T-009 Todo 削除に確認ダイアログを入れる
+- T-010 Playwright で重要な流れを End-to-End で確認する
 
 ## 候補
-- T-010 Playwright で重要な流れを End-to-End で確認する
+- なし
 
 ## 保留
 - なし
 
 ## 完了
+
+### T-009 Todo 削除に確認ダイアログを入れる
+- 目的: Todo 削除を即時実行せず、確認を挟んだ上で 1 件ずつ安全に削除できるようにする。
+- 範囲: `DELETE /todos/:id`、削除 use-case、repository 削除、Frontend の確認ダイアログ、削除中表示、削除失敗表示
+- 範囲外: 一括削除、Undo、外部監査ログ
+- 失敗検知: 削除の `404` / `500` を画面上で確認でき、Backend log でも追える状態にする。
+- 被害限定: 削除対象を確認ダイアログで明示し、1 件の削除失敗をその操作に閉じ込める。
+- 完了条件:
+  - Backend に `DELETE /todos/:id` が schema 付きで定義されている
+  - Frontend で削除前に確認ダイアログが開く
+  - 削除中表示がある
+  - `404` と `500` の失敗表示がある
+  - 削除成功後に対象 Todo だけが一覧から消える
+- 想定テスト:
+  - 正常な削除確認
+  - 存在しない Todo の `404` 確認
+  - 削除失敗時の `500` 確認
+- 証拠:
+  - `apps/backend/src/routes/registerTodoRoutes.ts` に `DELETE /todos/:id` route と schema を追加済み
+  - `apps/backend/src/use-cases/deleteTodoUseCase.ts` に Todo 削除 use-case を追加済み
+  - `apps/backend/src/repositories/createSqliteTodoRepository.ts` に Todo 削除処理を追加済み
+  - `apps/backend/src/app/createApp.test.ts` に `DELETE /todos/:id` の 200 / 404 / 500 テストを追加済み
+  - `apps/backend/src/use-cases/deleteTodoUseCase.test.ts` に use-case テストを追加済み
+  - `apps/backend/src/repositories/createSqliteTodoRepository.test.ts` に削除の repository 結合テストを追加済み
+  - `apps/frontend/src/features/todos/deleteTodo.ts` に `DELETE /todos/:id` client と失敗変換を追加済み
+  - `apps/frontend/src/App.tsx` に削除ボタン、確認ダイアログ、削除中表示、削除失敗表示を追加済み
+  - `apps/frontend/src/features/todos/deleteTodo.test.ts` に client テストを追加済み
+  - `apps/frontend/src/App.test.tsx` に削除確認 / 成功 / `404` / `500` 表示テストを追加済み
+  - `README.md` に `DELETE /todos/:id` の利用例と Frontend の確認ポイントを追加済み
+  - 標準環境で `npm run test --workspace @todo-ai-sandbox/backend` 実行済み
+  - 標準環境で `npm run test --workspace @todo-ai-sandbox/frontend` 実行済み
+  - 標準環境で `npm run build --workspace @todo-ai-sandbox/frontend` 実行済み
+  - 標準環境で `npm run build --workspace @todo-ai-sandbox/backend` 実行済み
+  - 標準環境で `npm test` 実行済み
 
 ### T-008 Todo の完了切り替えを実装する
 - 目的: Todo の完了状態を切り替えられるようにし、更新成功と更新失敗を 1 件単位で区別できるようにする。

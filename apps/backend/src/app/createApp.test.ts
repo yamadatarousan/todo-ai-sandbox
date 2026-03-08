@@ -590,4 +590,124 @@ describe("createApp", () => {
 
     await rm(temporaryDirectoryPath, { force: true, recursive: true });
   });
+
+  it("DELETE /todos/:id で Todo を 1 件削除する", async () => {
+    const { databaseFilePath, logFilePath, temporaryDirectoryPath } =
+      await createTemporaryAppResources();
+    const app = createApp({ databaseFilePath, logFilePath });
+    let createdTodoId: string | undefined;
+
+    try {
+      const createdResponse = await app.inject({
+        method: "POST",
+        payload: {
+          title: "削除する Todo",
+        },
+        url: "/todos",
+      });
+      const createdTodo = createdResponse.json() as {
+        todo: {
+          id: string;
+        };
+      };
+      createdTodoId = createdTodo.todo.id;
+
+      const response = await app.inject({
+        method: "DELETE",
+        url: `/todos/${createdTodoId}`,
+      });
+
+      expect(response.statusCode).toBe(200);
+      expect(response.json()).toEqual({
+        deletedTodoId: createdTodoId,
+      });
+    } finally {
+      await app.close();
+    }
+
+    const databaseConnection = createDatabaseConnection({ databaseFilePath });
+
+    try {
+      expect(
+        databaseConnection.client
+          .prepare("select id from todos where id = ?")
+          .get(createdTodoId),
+      ).toBeUndefined();
+    } finally {
+      databaseConnection.close();
+      await rm(temporaryDirectoryPath, { force: true, recursive: true });
+    }
+  });
+
+  it("DELETE /todos/:id は存在しない Todo に 404 を返す", async () => {
+    const { databaseFilePath, logFilePath, temporaryDirectoryPath } =
+      await createTemporaryAppResources();
+    const app = createApp({ databaseFilePath, logFilePath });
+
+    try {
+      const response = await app.inject({
+        method: "DELETE",
+        url: "/todos/missing-todo",
+      });
+
+      expect(response.statusCode).toBe(404);
+      expect(response.json()).toEqual({
+        message: "Todo が見つかりません。",
+        requestId: expect.any(String),
+      });
+    } finally {
+      await app.close();
+      await rm(temporaryDirectoryPath, { force: true, recursive: true });
+    }
+  });
+
+  it("DELETE /todos/:id の削除失敗時は 500 と requestId を返し、ログへ残す", async () => {
+    const { databaseFilePath, logFilePath, temporaryDirectoryPath } =
+      await createTemporaryAppResources();
+    const app = createApp({
+      databaseFilePath,
+      deleteTodoUseCase: {
+        async execute() {
+          throw new Error("削除に失敗しました");
+        },
+      },
+      logFilePath,
+    });
+
+    try {
+      const response = await app.inject({
+        method: "DELETE",
+        url: "/todos/todo-1",
+      });
+
+      expect(response.statusCode).toBe(500);
+      expect(response.json()).toEqual({
+        message: "サーバーエラーが発生しました。",
+        requestId: expect.any(String),
+      });
+    } finally {
+      await app.close();
+    }
+
+    const logEntries = parseLogEntries(await readFile(logFilePath, "utf8"));
+
+    expect(logEntries).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({
+          err: expect.objectContaining({
+            message: "削除に失敗しました",
+            stack: expect.stringContaining("Error: 削除に失敗しました"),
+          }),
+          level: 50,
+          req: expect.objectContaining({
+            method: "DELETE",
+            url: "/todos/todo-1",
+          }),
+          reqId: expect.any(String),
+        }),
+      ]),
+    );
+
+    await rm(temporaryDirectoryPath, { force: true, recursive: true });
+  });
 });

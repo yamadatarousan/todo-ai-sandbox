@@ -7,11 +7,13 @@ import {
   type ErrorResponse,
 } from "../shared/requestError";
 import type { CreateTodoUseCase } from "../use-cases/createTodoUseCase";
+import type { DeleteTodoUseCase } from "../use-cases/deleteTodoUseCase";
 import type { GetTodosUseCase } from "../use-cases/getTodosUseCase";
 import type { UpdateTodoCompletionUseCase } from "../use-cases/updateTodoCompletionUseCase";
 
 type RegisterTodoRoutesOptions = {
   createTodoUseCase: CreateTodoUseCase;
+  deleteTodoUseCase: DeleteTodoUseCase;
   getTodosUseCase: GetTodosUseCase;
   updateTodoCompletionUseCase: UpdateTodoCompletionUseCase;
 };
@@ -43,6 +45,13 @@ type UpdateTodoCompletionRequestBody = {
   isCompleted: boolean;
 };
 type UpdateTodoCompletionRouteReply = TodoSuccessResponse | ErrorResponse;
+type DeleteTodoRequestParams = {
+  id: string;
+};
+type DeleteTodoSuccessResponse = {
+  deletedTodoId: string;
+};
+type DeleteTodoRouteReply = DeleteTodoSuccessResponse | ErrorResponse;
 
 const createTodoBodySchema = {
   additionalProperties: false,
@@ -114,6 +123,15 @@ const updateTodoCompletionBodySchema = {
     isCompleted: { type: "boolean" },
   },
   required: ["isCompleted"],
+  type: "object",
+} as const;
+
+const deleteTodoSuccessResponseSchema = {
+  additionalProperties: false,
+  properties: {
+    deletedTodoId: { type: "string" },
+  },
+  required: ["deletedTodoId"],
   type: "object",
 } as const;
 
@@ -210,6 +228,33 @@ export function registerTodoRoutes(
           title: updatedTodo.title,
           updatedAt: updatedTodo.updatedAt.toISOString(),
         },
+      };
+    },
+  );
+
+  app.delete<{
+    Params: DeleteTodoRequestParams;
+    Reply: DeleteTodoRouteReply;
+  }>(
+    "/todos/:id",
+    {
+      schema: {
+        params: updateTodoCompletionParamsSchema,
+        response: {
+          200: deleteTodoSuccessResponseSchema,
+          400: badRequestErrorResponseSchema,
+          404: notFoundErrorResponseSchema,
+          500: internalServerErrorResponseSchema,
+        },
+      },
+    },
+    async (request) => {
+      await options.deleteTodoUseCase.execute({
+        id: request.params.id,
+      });
+
+      return {
+        deletedTodoId: request.params.id,
       };
     },
   );

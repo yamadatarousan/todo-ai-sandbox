@@ -18,6 +18,8 @@ Todo アプリを題材に、AI を使った実装での失敗検知と被害限
 - 保存が `4xx` / `5xx` で失敗したときは、フォーム周辺に message / issue / `requestId` を表示する
 - Todo の完了切り替えは `PATCH /todos/:id` を呼び出し、更新成功時だけ対象行を更新する
 - 完了更新が `404` / `500` で失敗したときは、対象の Todo 行に message と `requestId` を表示する
+- Todo 削除は確認ダイアログを経由して `DELETE /todos/:id` を呼び出し、成功時だけ対象行を一覧から外す
+- 削除が `404` / `500` で失敗したときは、確認ダイアログ内に message と `requestId` を表示する
 
 ## Backend のログ
 - ログファイル: `logs/backend/app.log`
@@ -50,6 +52,13 @@ curl -X PATCH http://127.0.0.1:3001/todos/<todo-id> \
   -d '{"isCompleted":true}'
 ```
 
+- Todo の削除:
+
+```bash
+curl -X DELETE http://127.0.0.1:3001/todos/<todo-id>
+```
+
 - `GET /todos` は新しい Todo を先に返す
 - `PATCH /todos/:id` は存在しない Todo に `404` を返す
+- `DELETE /todos/:id` は存在しない Todo に `404` を返す
 - 不正な入力や想定外エラーの response には `requestId` が含まれる
