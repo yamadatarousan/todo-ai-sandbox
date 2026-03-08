@@ -1,5 +1,6 @@
-import { render, screen } from "@testing-library/react";
+import { fireEvent, render, screen, waitFor } from "@testing-library/react";
 import { App } from "./App";
+import { createTodoSaveError } from "./features/todos/createTodo";
 import { TodoListLoadError, type TodoSummary } from "./features/todos/fetchTodos";
 
 function createDeferredPromise<T>() {
@@ -46,7 +47,7 @@ describe("App", () => {
       await screen.findByText("Todo はまだありません。"),
     ).toBeInTheDocument();
     expect(
-      screen.getByText("最初の 1 件は次のタスクで追加できるようにします。"),
+      screen.getByText("最初の 1 件を追加して、保存結果をここで確認できます。"),
     ).toBeInTheDocument();
   });
 
@@ -104,5 +105,133 @@ describe("App", () => {
     expect(
       screen.getByText("成功したようには扱わず、失敗として表示しています。"),
     ).toBeInTheDocument();
+  });
+
+  it("Todo 追加中は保存中表示を出し、成功後に一覧へ反映する", async () => {
+    const deferred = createDeferredPromise<TodoSummary>();
+    const saveTodo = vi.fn().mockImplementation(() => deferred.promise);
+
+    render(
+      <App
+        loadTodos={async () => []}
+        saveTodo={saveTodo}
+      />,
+    );
+
+    await screen.findByText("Todo はまだありません。");
+
+    fireEvent.change(screen.getByLabelText("新しい Todo"), {
+      target: { value: "追加する Todo" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Todo を追加する" }));
+
+    expect(saveTodo).toHaveBeenCalledWith("追加する Todo");
+    expect(
+      screen.getByRole("button", { name: "保存中..." }),
+    ).toBeDisabled();
+
+    deferred.resolve({
+      createdAt: "2026-03-09T00:00:00.000Z",
+      id: "todo-new",
+      isCompleted: false,
+      title: "追加する Todo",
+      updatedAt: "2026-03-09T00:00:00.000Z",
+    });
+
+    expect(
+      await screen.findByRole("heading", { name: "追加する Todo" }),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByText("1 件の Todo を表示しています。"),
+    ).toBeInTheDocument();
+    expect(screen.getByLabelText("新しい Todo")).toHaveValue("");
+  });
+
+  it("保存が 4xx で失敗したときはフォーム周辺に失敗表示を出し、一覧は壊さない", async () => {
+    render(
+      <App
+        loadTodos={async () => [
+          {
+            createdAt: "2026-03-08T00:00:00.000Z",
+            id: "todo-1",
+            isCompleted: false,
+            title: "既存の Todo",
+            updatedAt: "2026-03-08T00:00:00.000Z",
+          },
+        ]}
+        saveTodo={async () => {
+          throw createTodoSaveError("入力が不正です。", {
+            issues: [
+              {
+                field: "title",
+                message: "title は空文字を許可しません。",
+              },
+            ],
+            requestId: "req-save-400",
+          });
+        }}
+      />,
+    );
+
+    await screen.findByRole("heading", { name: "既存の Todo" });
+
+    fireEvent.change(screen.getByLabelText("新しい Todo"), {
+      target: { value: "   " },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Todo を追加する" }));
+
+    expect(await screen.findByText("入力が不正です。")).toBeInTheDocument();
+    expect(
+      screen.getByText("title は空文字を許可しません。"),
+    ).toBeInTheDocument();
+    expect(screen.getByText("requestId: req-save-400")).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "既存の Todo" }),
+    ).toBeInTheDocument();
+    expect(screen.getByText("1 件の Todo を表示しています。")).toBeInTheDocument();
+  });
+
+  it("保存が 5xx で失敗したときは成功したように見せず、一覧も維持する", async () => {
+    render(
+      <App
+        loadTodos={async () => [
+          {
+            createdAt: "2026-03-08T00:00:00.000Z",
+            id: "todo-1",
+            isCompleted: false,
+            title: "既存の Todo",
+            updatedAt: "2026-03-08T00:00:00.000Z",
+          },
+        ]}
+        saveTodo={async () => {
+          throw createTodoSaveError("サーバーエラーが発生しました。", {
+            requestId: "req-save-500",
+          });
+        }}
+      />,
+    );
+
+    await screen.findByRole("heading", { name: "既存の Todo" });
+
+    fireEvent.change(screen.getByLabelText("新しい Todo"), {
+      target: { value: "保存に失敗する Todo" },
+    });
+    fireEvent.click(screen.getByRole("button", { name: "Todo を追加する" }));
+
+    expect(
+      await screen.findByText("サーバーエラーが発生しました。"),
+    ).toBeInTheDocument();
+    expect(screen.getByText("requestId: req-save-500")).toBeInTheDocument();
+    expect(
+      screen.getByText("保存に失敗したため、一覧は成功扱いに更新していません。"),
+    ).toBeInTheDocument();
+    expect(
+      screen.getByRole("heading", { name: "既存の Todo" }),
+    ).toBeInTheDocument();
+    await waitFor(() => {
+      expect(
+        screen.queryByRole("heading", { name: "保存に失敗する Todo" }),
+      ).not.toBeInTheDocument();
+    });
   });
 });

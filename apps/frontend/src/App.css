@@ -40,6 +40,7 @@ body {
 
 .hero-panel,
 .board-panel,
+.composer-panel,
 .todo-card,
 .status-card {
   border: 1px solid rgba(91, 61, 30, 0.18);
@@ -87,9 +88,91 @@ body {
 }
 
 .board-panel {
+  display: grid;
+  gap: 1rem;
   background: rgba(255, 252, 246, 0.86);
   min-height: 18rem;
   padding: 1rem;
+}
+
+.composer-panel {
+  background: linear-gradient(180deg, rgba(255, 248, 238, 0.96), #fff7eb);
+  padding: 1.25rem;
+}
+
+.composer-header {
+  display: grid;
+  gap: 0.35rem;
+  margin-bottom: 1rem;
+}
+
+.composer-header p {
+  margin: 0;
+}
+
+.todo-form {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.todo-form-label {
+  color: #5c4630;
+  font-size: 0.95rem;
+}
+
+.todo-form-row {
+  display: grid;
+  gap: 0.75rem;
+  grid-template-columns: minmax(0, 1fr) auto;
+}
+
+.todo-title-input,
+.todo-form-row button {
+  border: 1px solid rgba(122, 90, 58, 0.28);
+  border-radius: 0.95rem;
+  font: inherit;
+}
+
+.todo-title-input {
+  background: rgba(255, 253, 249, 0.94);
+  min-width: 0;
+  padding: 0.9rem 1rem;
+}
+
+.todo-title-input::placeholder {
+  color: #9f8770;
+}
+
+.todo-form-row button {
+  background: linear-gradient(180deg, #82572d, #6f4620);
+  color: #fff9f1;
+  cursor: pointer;
+  min-width: 10rem;
+  padding: 0.9rem 1.2rem;
+}
+
+.todo-form-row button:disabled {
+  background: #bba184;
+  color: rgba(255, 249, 241, 0.9);
+  cursor: not-allowed;
+}
+
+.form-hint {
+  color: #5f4b38;
+  margin: 0.8rem 0 0;
+}
+
+.form-error-card {
+  margin-top: 1rem;
+}
+
+.issue-list {
+  margin: 0.75rem 0;
+  padding-left: 1.25rem;
+}
+
+.issue-list li {
+  margin-top: 0.35rem;
 }
 
 .status-card {
@@ -161,9 +244,18 @@ body {
 
   .hero-panel,
   .board-panel,
+  .composer-panel,
   .todo-card,
   .status-card {
     border-radius: 1.1rem;
+  }
+
+  .todo-form-row {
+    grid-template-columns: 1fr;
+  }
+
+  .todo-form-row button {
+    width: 100%;
   }
 
   .todo-card-topline {

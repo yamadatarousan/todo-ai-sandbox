@@ -13,26 +13,9 @@
 - なし
 
 ## 次
-- なし
-
-### T-007 Frontend で Todo を追加し、保存失敗を表示する
-- 目的: Todo 追加フォームを作り、保存成功と保存失敗を画面上で区別できるようにする。
-- 範囲: 入力フォーム、`POST /todos` 呼び出し、保存中表示、保存失敗表示、一覧更新
-- 範囲外: 完了更新、削除
-- 失敗検知: `POST /todos` の `4xx` / `5xx` を画面上で確認できる状態にする。
-- 被害限定: 保存失敗をフォーム周辺に閉じ込め、一覧表示全体を壊さない。
-- 完了条件:
-  - Frontend から `POST /todos` を呼び出せる
-  - 保存中表示がある
-  - `4xx` と `5xx` の失敗表示がある
-  - 保存成功後に一覧へ反映される
-- 想定テスト:
-  - 正常追加時の一覧更新確認
-  - 空文字入力時の失敗表示確認
-  - `500` 時の失敗表示確認
+- T-008 Todo の完了切り替えを実装する
 
 ## 候補
-- T-008 Todo の完了切り替えを実装する
 - T-009 Todo 削除に確認ダイアログを入れる
 - T-010 Playwright で重要な流れを End-to-End で確認する
 
@@ -228,6 +211,32 @@
   - `apps/frontend/src/features/todos/fetchTodos.test.ts` に `GET /todos` client テストを追加済み
   - `apps/frontend/vite.config.ts` に開発時の `/todos` proxy を追加済み
   - `README.md` に Frontend の proxy 前提と `GET /todos` の利用前提を追加済み
+  - 標準環境で `npm run test --workspace @todo-ai-sandbox/frontend` 実行済み
+  - 標準環境で `npm run build --workspace @todo-ai-sandbox/frontend` 実行済み
+  - 標準環境で `npm test` 実行済み
+
+### T-007 Frontend で Todo を追加し、保存失敗を表示する
+- 目的: Todo 追加フォームを作り、保存成功と保存失敗を画面上で区別できるようにする。
+- 範囲: 入力フォーム、`POST /todos` 呼び出し、保存中表示、保存失敗表示、一覧更新
+- 範囲外: 完了更新、削除
+- 失敗検知: `POST /todos` の `4xx` / `5xx` を画面上で確認できる状態にする。
+- 被害限定: 保存失敗をフォーム周辺に閉じ込め、一覧表示全体を壊さない。
+- 完了条件:
+  - Frontend から `POST /todos` を呼び出せる
+  - 保存中表示がある
+  - `4xx` と `5xx` の失敗表示がある
+  - 保存成功後に一覧へ反映される
+- 想定テスト:
+  - 正常追加時の一覧更新確認
+  - 空文字入力時の失敗表示確認
+  - `500` 時の失敗表示確認
+- 証拠:
+  - `apps/frontend/src/features/todos/createTodo.ts` に `POST /todos` client と保存失敗の error 変換を追加済み
+  - `apps/frontend/src/App.tsx` に Todo 追加フォーム、保存中表示、保存失敗表示、成功時の一覧更新を追加済み
+  - `apps/frontend/src/App.css` に追加フォームと保存失敗表示の UI を追加済み
+  - `apps/frontend/src/features/todos/createTodo.test.ts` に保存成功 / `4xx` / `5xx` の client テストを追加済み
+  - `apps/frontend/src/App.test.tsx` に保存中 / 成功 / `4xx` / `5xx` の表示テストを追加済み
+  - `README.md` に Frontend の Todo 追加と保存失敗確認ポイントを追加済み
   - 標準環境で `npm run test --workspace @todo-ai-sandbox/frontend` 実行済み
   - 標準環境で `npm run build --workspace @todo-ai-sandbox/frontend` 実行済み
   - 標準環境で `npm test` 実行済み

@@ -12,6 +12,11 @@ Todo アプリを題材に、AI を使った実装での失敗検知と被害限
 - workspace 全体のテスト: `npm test`
 - 開発時は Frontend の `/todos` を Vite proxy で Backend `http://127.0.0.1:3001` へ流す
 
+## Frontend の確認ポイント
+- Todo 一覧は起動時に `GET /todos` を呼び出して表示する
+- Todo 追加フォームは `POST /todos` を呼び出し、保存成功時だけ一覧を更新する
+- 保存が `4xx` / `5xx` で失敗したときは、フォーム周辺に message / issue / `requestId` を表示する
+
 ## Backend のログ
 - ログファイル: `logs/backend/app.log`
 - ログ確認: `tail -f logs/backend/app.log`
